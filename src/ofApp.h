@@ -34,4 +34,5 @@ class ofApp : public ofBaseApp{
 		ofxOscSender sender;
     
         imageCapture capture;
+    bool p_open = true;
 };

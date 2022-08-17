@@ -56,41 +56,43 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     gui.begin();
-    ImGui::Begin("Sonograf");
     
-    ImGui::Text("Benvinguts al Sonograf");
-    ImGui::SliderInt("Image", &currentImage, 0, 5);
-    ImGui::Separator();
-    static float threshold = 0.3;
-    static float slope = 0.3;
-    static float mult = 1;
-    ImGui::Text("Audio Params");
-    if(ImGui::SliderFloat("Threshold", &threshold, 0, 1)){
-        ofxOscMessage m;
-        m.setAddress("/n_set");
-        m.addIntArg(2000);
-        m.addStringArg("threshold");
-        m.addFloatArg(threshold);
-        sender.sendMessage(m);
+    if(ImGui::Begin("Sonograf", &p_open, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize)){
+        
+        ImGui::Text("Benvinguts al Sonograf");
+        ImGui::SliderInt("Image", &currentImage, 0, 5);
+        ImGui::Separator();
+        static float threshold = 0.3;
+        static float slope = 0.3;
+        static float mult = 1;
+        ImGui::Text("Audio Params");
+        if(ImGui::SliderFloat("Threshold", &threshold, 0, 1)){
+            ofxOscMessage m;
+            m.setAddress("/n_set");
+            m.addIntArg(2000);
+            m.addStringArg("threshold");
+            m.addFloatArg(threshold);
+            sender.sendMessage(m);
+        }
+        if(ImGui::SliderFloat("Slope", &slope, 0, 1)){
+            ofxOscMessage m;
+            m.setAddress("/n_set");
+            m.addIntArg(2000);
+            m.addStringArg("slope");
+            m.addFloatArg(slope);
+            sender.sendMessage(m);
+        }
+        if(ImGui::SliderFloat("Mult", &mult, 0, 30)){
+            ofxOscMessage m;
+            m.setAddress("/n_set");
+            m.addIntArg(2000);
+            m.addStringArg("mult");
+            m.addFloatArg(mult);
+            sender.sendMessage(m);
+        }
+        ImGui::Separator();
+        ImGui::Text("FPS: %f", ofGetFrameRate());
     }
-    if(ImGui::SliderFloat("Slope", &slope, 0, 1)){
-        ofxOscMessage m;
-        m.setAddress("/n_set");
-        m.addIntArg(2000);
-        m.addStringArg("slope");
-        m.addFloatArg(slope);
-        sender.sendMessage(m);
-    }
-    if(ImGui::SliderFloat("Mult", &mult, 0, 30)){
-        ofxOscMessage m;
-        m.setAddress("/n_set");
-        m.addIntArg(2000);
-        m.addStringArg("mult");
-        m.addFloatArg(mult);
-        sender.sendMessage(m);
-    }
-    ImGui::Separator();
-    ImGui::Text("FPS: %f", ofGetFrameRate());
     ImGui::End();
     
     capture.drawGui();
@@ -109,7 +111,7 @@ void ofApp::draw(){
     for(int i = 0; i < 720; i++){
         auto pixelColor = capture.getPixels().getColor(currentPosition%1280, i);
         float luminance = (0.299 * pixelColor[0]/255.0f + 0.587 * pixelColor[1]/255.0f + 0.114 * pixelColor[2]/255.0f);
-        luminance = ofMap(luminance, 0.2, 0.8, 1, 0);
+        luminance = ofMap(luminance, 0.2, 0.7, 1, 0, true);
         line.addVertex(glm::vec3(currentPosition%1280 - (luminance*100/**headerWidth*opacity*/), i, 0));
         luminances[i] = luminance;
     }
@@ -127,13 +129,14 @@ void ofApp::draw(){
     sender.sendMessage(m);
     
     ofPushStyle();
-    //ofSetColor(headerColor);
-    //ofSetLineWidth(headerStroke);
+    ofSetColor(ofColor::red);
+    ofSetLineWidth(5);
     line.draw();
     ofPopStyle();
     
-    gui.draw(); // <-- In manual mode, you can choose to render imgui at a given moment in your rendering pipeline
-    
+    if(p_open){
+        gui.draw(); // <-- In manual mode, you can choose to render imgui at a given moment in your rendering pipeline
+    }
     
 }
 
@@ -161,7 +164,9 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    
+    if(button == 2){
+        p_open = !p_open;
+    }
 }
 
 //--------------------------------------------------------------

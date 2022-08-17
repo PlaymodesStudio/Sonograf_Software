@@ -21,6 +21,7 @@ void imageCapture::setup(){
     anchorPoints[3] = glm::vec2(10, 700);
 
     unwarped.allocate(1280, 720, OF_IMAGE_COLOR);
+    calibrate = false;
 }
 
 void imageCapture::update(){
@@ -32,7 +33,7 @@ void imageCapture::update(){
 
 void imageCapture::draw(float x, float y, float w, float h){
     if(w == -1 || h == -1){
-        if(ofGetKeyPressed(' ')){
+        if(!calibrate){
             unwarped.draw(x, y);
         }else{
             videoGrabber.draw(x, y);
@@ -43,6 +44,14 @@ void imageCapture::draw(float x, float y, float w, float h){
 }
 
 void imageCapture::drawGui(){
+    if(ImGui::Begin("Sonograf")){
+        ImGui::Separator();
+        ImGui::Checkbox("Calibrate", &calibrate);
+    }
+    ImGui::End();
+    
+    
+    if(calibrate){
     ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
     bool someClick = false;
     for(int i = 0; i < 4; i++){
@@ -78,8 +87,9 @@ void imageCapture::drawGui(){
         if(ImGui::IsKeyPressed(ImGuiKey_UpArrow)) anchorPoints[anchorSelectIdx] += glm::vec2(0, -1);
         if(ImGui::IsKeyPressed(ImGuiKey_DownArrow)) anchorPoints[anchorSelectIdx] += glm::vec2(0, 1);
     }
+    }
 }
 
 ofPixels& imageCapture::getPixels(){
-    return videoGrabber.getPixels();
+    return unwarped.getPixels();
 }

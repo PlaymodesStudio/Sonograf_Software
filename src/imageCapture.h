@@ -27,6 +27,7 @@ private:
     int anchorDragIdx = -1;
     int anchorSelectIdx = -1;
     ofImage unwarped;
+    bool calibrate;
 };
 
 #endif /* imageCapture_h */
