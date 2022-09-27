@@ -1,5 +1,5 @@
 include_directories(src)
-add_executable(Sonograf main.cpp)
+add_executable(Sonograf main.cpp imageCapture.cpp imageRead.cpp physicalControls.cpp scManager.cpp)
 
 if(NOT APPLE)
     add_subdirectory(i2c)
