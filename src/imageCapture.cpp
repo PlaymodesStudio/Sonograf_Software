@@ -83,50 +83,52 @@ void imageCapture::drawGui(){
     {
         calibrate = !calibrate;
     }
-
-    bool someClick = false;
-    for (int i = 0; i < 4; i++)
-    {
-        auto bulletPosition = anchorPoints[i];
-        auto mouseToBulletDistance = Vector2Distance(GetMousePosition(), bulletPosition);
-        auto bulletSize = 20;
-        if (mouseToBulletDistance < bulletSize)
-        {
-            if (IsMouseButtonPressed(0))
-            {
-                anchorDragIdx = i;
-                anchorSelectIdx = i;
-                someClick = true;
-            }
-        }
-    }
-    if (IsMouseButtonPressed(0) && !someClick)
-    {
-        anchorSelectIdx = -1;
-    }
-    if (IsMouseButtonReleased(0))
-        anchorDragIdx = -1;
-
-    if (anchorDragIdx != -1)
-    {
-        anchorPoints[anchorDragIdx] = Vector2Add(anchorPoints[anchorDragIdx], drag);
-    }
-
-    if (anchorSelectIdx != -1)
-    {
-        if (IsKeyDown(KEY_LEFT))
-            anchorPoints[anchorSelectIdx] = Vector2Add(anchorPoints[anchorSelectIdx], (Vector2){-1.0f, 0.0f});
-        if (IsKeyDown(KEY_RIGHT))
-            anchorPoints[anchorSelectIdx] = Vector2Add(anchorPoints[anchorSelectIdx], (Vector2){1.0f, 0.0f});
-        if (IsKeyDown(KEY_UP))
-            anchorPoints[anchorSelectIdx] = Vector2Add(anchorPoints[anchorSelectIdx], (Vector2){0.0f, -1.0f});
-        if (IsKeyDown(KEY_DOWN))
-            anchorPoints[anchorSelectIdx] = Vector2Add(anchorPoints[anchorSelectIdx], (Vector2){0.0f, 1.0f});
-    }
+    
     
     // Gui Warping
     if (calibrate)
     {
+
+        bool someClick = false;
+        for (int i = 0; i < 4; i++)
+        {
+            auto bulletPosition = anchorPoints[i];
+            auto mouseToBulletDistance = Vector2Distance(GetMousePosition(), bulletPosition);
+            auto bulletSize = 20;
+            if (mouseToBulletDistance < bulletSize)
+            {
+                if (IsMouseButtonPressed(0))
+                {
+                    anchorDragIdx = i;
+                    anchorSelectIdx = i;
+                    someClick = true;
+                }
+            }
+        }
+        if (IsMouseButtonPressed(0) && !someClick)
+        {
+            anchorSelectIdx = -1;
+        }
+        if (IsMouseButtonReleased(0))
+            anchorDragIdx = -1;
+        
+        if (anchorDragIdx != -1)
+        {
+            anchorPoints[anchorDragIdx] = Vector2Add(anchorPoints[anchorDragIdx], drag);
+        }
+        
+        if (anchorSelectIdx != -1)
+        {
+            if (IsKeyDown(KEY_LEFT))
+                anchorPoints[anchorSelectIdx] = Vector2Add(anchorPoints[anchorSelectIdx], (Vector2){-1.0f, 0.0f});
+            if (IsKeyDown(KEY_RIGHT))
+                anchorPoints[anchorSelectIdx] = Vector2Add(anchorPoints[anchorSelectIdx], (Vector2){1.0f, 0.0f});
+            if (IsKeyDown(KEY_UP))
+                anchorPoints[anchorSelectIdx] = Vector2Add(anchorPoints[anchorSelectIdx], (Vector2){0.0f, -1.0f});
+            if (IsKeyDown(KEY_DOWN))
+                anchorPoints[anchorSelectIdx] = Vector2Add(anchorPoints[anchorSelectIdx], (Vector2){0.0f, 1.0f});
+        }
+        
         for (int i = 0; i < 4; i++)
         {
             Color color = GREEN;

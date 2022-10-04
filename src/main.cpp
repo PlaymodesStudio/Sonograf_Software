@@ -59,22 +59,32 @@ int main(void)
 
     //i2c
     physicalControls controls;
+    
+    //Variables
+    int currentScaleSize = 720;
 
     // Main loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
         // Update
         //----------------------------------------------------------------------------------
-        liveReader.update(capture.update(), 0);
         controls.readValues();
+        
+        currentScaleSize = supercollider.getScaleSize(controls.getScale());
+        
+        liveReader.update(capture.update(), currentScaleSize, 0);
+        
+        supercollider.setScale(controls.getScale(), controls.getTranspose());
+        supercollider.sendAmps(liveReader.getValues(), currentScaleSize);
 
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
         ClearBackground(RAYWHITE);
-        liveReader.draw();
+        liveReader.draw(supercollider.getScaleSize(controls.getScale()));
         capture.drawGui();
+        controls.drawGui();
         
         //TODO: Better mouse drawing if in linux
 #if __linux__
@@ -83,6 +93,8 @@ int main(void)
         EndDrawing();
         //----------------------------------------------------------------------------------
     }
+    
+    supercollider.close();
 
     // De-Initialization
     //--------------------------------------------------------------------------------------

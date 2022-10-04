@@ -8,7 +8,70 @@
 #include "scManager.h"
 
 scManager::scManager(){
+    auto map = [](float value, float inputMin, float inputMax, float outputMin, float outputMax) -> float{
+        return ((value - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin);
+    };
     
+    //Fill scales;
+    //Mircotonal
+    scales[0].resize(360);
+    for(int i = 0; i < 360; i++){
+        scales[0][i] = map(i, 0, 359, 108, 48);
+    }
+    
+    //Major
+    scales[1].resize(60);
+    for(int i = 0; i < 60; i++){
+        scales[1][i] = 108-i;
+    }
+    
+    //Minor
+    scales[2].resize(60);
+    for(int i = 0; i < 60; i++){
+        scales[2][i] = 108-i;
+    }
+    
+    //Major_Pentatonic
+    scales[3].resize(60);
+    for(int i = 0; i < 60; i++){
+        scales[3][i] = 108-i;
+    }
+    
+    //Minor_Pentatonic
+    scales[4].resize(60);
+    for(int i = 0; i < 60; i++){
+        scales[4][i] = 108-i;
+    }
+    
+    //Major_Harmonic
+    scales[5].resize(60);
+    for(int i = 0; i < 60; i++){
+        scales[5][i] = 108-i;
+    }
+    
+    //Minor_Harmonic
+    scales[6].resize(60);
+    for(int i = 0; i < 60; i++){
+        scales[6][i] = 108-i;
+    }
+    
+    //Hirajoshi
+    scales[7].resize(60);
+    for(int i = 0; i < 60; i++){
+        scales[7][i] = 108-i;
+    }
+    
+    //Arabic
+    scales[8].resize(60);
+    for(int i = 0; i < 60; i++){
+        scales[8][i] = 108-i;
+    }
+    
+    //Wholetone
+    scales[9].resize(60);
+    for(int i = 0; i < 60; i++){
+        scales[9][i] = 108-i;
+    }
 }
 
 bool scManager::setup(std::string address, int port){
@@ -61,32 +124,50 @@ void scManager::initialize(){
 //    int nodeID = 2000;
 //    int position = 0;
 //    int groupID = 1;
-    setScale(0);
+    setScale(0, 0);//Chromatic no transpose
 }
 
 void scManager::update(){
     
 }
 
-void scManager::setScale(int scale){
+void scManager::close(){
+    osc::OutboundPacketStream p( buffer, OUTPUT_BUFFER_SIZE );
+
+    p << osc::BeginBundleImmediate
+        << osc::BeginMessage("/n_free") //Free synth
+            << 2000 << osc::EndMessage;
+
+    sendSocket->Send(p.Data(), p.Size());
+}
+
+void scManager::setScale(int scale, int transpose){
     osc::OutboundPacketStream p( buffer, OUTPUT_BUFFER_SIZE );
 
     p << osc::BeginBundleImmediate
         << osc::BeginMessage("/n_setn") //Create World
-            << 2000 << "freq" << 360; //NodeId / Param Name / Size
+            << 2000 << "freq" << (int)scales[scale].size(); //NodeId / Param Name / Size
     
-    auto map = [](float value, float inputMin, float inputMax, float outputMin, float outputMax) -> float{
-        return ((value - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin);
-    };
+    for(int i = 0; i < scales[scale].size(); i++){
+        p << scales[scale][i] + transpose;
+    }
+    
+    p << osc::EndMessage;
+    sendSocket->Send(p.Data(), p.Size());
+}
 
-    switch(scale){
-        case 0:
-        {
-            for(int i = 0; i < 360; i++){
-                p << map(i, 0, 359, 108, 48);
-            }
-            break;
-        }
+
+void scManager::sendAmps(float amps[], int size){
+    osc::OutboundPacketStream p( buffer, OUTPUT_BUFFER_SIZE );
+
+    p << osc::BeginBundleImmediate
+        << osc::BeginMessage("/n_setn") //Create World
+            << 2000 << "amp" << 360; //NodeId / Param Name / Size
+        
+    for(int i = 0; i < 360; i++){
+        //TODO: Que es aquest 10?
+        if(i < size) p << amps[i] / (size/10);
+        else p << 0;
     }
     
     p << osc::EndMessage;
