@@ -6,6 +6,7 @@
 //
 
 #include "scManager.h"
+#include <iostream>
 
 scManager::scManager(){
     auto map = [](float value, float inputMin, float inputMax, float outputMin, float outputMax) -> float{
@@ -166,8 +167,8 @@ void scManager::sendAmps(float amps[], int size){
         
     for(int i = 0; i < 360; i++){
         //TODO: Que es aquest 10?
-        if(i < size) p << amps[i] / (size/10);
-        else p << 0;
+        if(i < size) p << amps[i];
+        else p << 0.0f;
     }
     
     p << osc::EndMessage;

@@ -30,7 +30,7 @@ imageCapture::imageCapture(int width, int height) : camWidth(width), camHeight(h
 
 void imageCapture::setup(){
     //--- INITIALIZE VIDEOCAPTURE
-    int deviceID = 1;        // 0 = open default camera
+    int deviceID = 0;        // 0 = open default camera
     #if __APPLE__
         int apiID = cv::CAP_ANY; // 0 = autodetect default API
     #else
@@ -46,20 +46,37 @@ void imageCapture::setup(){
     capture.set(cv::CAP_PROP_FRAME_HEIGHT, camHeight);
 }
 
-void imageCapture::captureNewFrame(){
-    future = std::async(std::launch::async, &imageCapture::update, this);
+void imageCapture::captureNewFrame(Image &dispImage, Image &readImage){
+    future = std::async(std::launch::async, &imageCapture::getAndProcessImage, this, std::ref(dispImage), std::ref(readImage));
 }
 
 void imageCapture::update(){
-    //TODO: Do this in a seperate thread
-    bool captured = capture.read(capturedFrame);
+    // bool captured = capture.grab();
+    // if(!captured){
+    //     std::cout << "ERROR! Frame not captured" << std::endl;
+    // }
+}
+
+bool imageCapture::isFrameNew(){
+    return future.wait_for(std::chrono::microseconds(0)) == std::future_status::ready;
+}
+
+cv::Mat& imageCapture::getFrame(){
+    return transformedFrame;
+}
+
+void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage){
+    std::cout << "Capture func called" << std::endl;
+    for(int i = 0; i < 5; i++) capture.grab();
+    bool captured = capture.retrieve(capturedFrame);
+    std::cout << "Frame Read" << std::endl;
     if(!captured){
         std::cout << "ERROR! Frame not captured" << std::endl;
     }
     
     if(calibrate){
         cv::cvtColor(capturedFrame, colorFrame, cv::COLOR_BGR2RGB);
-        cv::flip(colorFrame, transformedFrame, -1); //Fliping arround both axis
+        cv::flip(colorFrame, warpedFrame, -1); //Fliping arround both axis
     }
     else{
         cv::cvtColor(capturedFrame, colorFrame, cv::COLOR_BGR2RGB);
@@ -69,17 +86,29 @@ void imageCapture::update(){
             srcPoints[i].y = anchorPoints[i].y;
         }
         cv::Mat transform = getPerspectiveTransform(&srcPoints[0], &dstPoints[0]);
-        warpPerspective(flippedImage, transformedFrame, transform, transformedFrame.size(), cv::INTER_LINEAR);
+        warpPerspective(flippedImage, warpedFrame, transform, transformedFrame.size(), cv::INTER_CUBIC);
+        std::cout << "Frame Warped" << std::endl;
     }
-    //return transformedFrame;
-}
+    cv::cvtColor(warpedFrame, capturedFrame, cv::COLOR_RGB2GRAY);
+    cv::threshold(capturedFrame, transformedFrame, 100, 255, cv::THRESH_BINARY);
+    //cv::adaptiveThreshold(capturedFrame, transformedFrame, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 100, 10);
+    //cv::resize(transformedFrame, resizedMat, cv::Size(camWidth, reducedHeight), cv::INTER_MAX);
+    cv::bitwise_not(transformedFrame, flippedImage);
+    cv::cvtColor(flippedImage, resizedMat, cv::COLOR_GRAY2RGB);
+    std::cout << "Frame Thresholded" << std::endl;
+    //TODO: Inverse image, make adaptative threshold, etc
+    dispImage.width = camWidth;
+    dispImage.height = camHeight;
+    dispImage.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
+    dispImage.mipmaps = 1;
+    dispImage.data = (void*)warpedFrame.data;
 
-bool imageCapture::isFrameNew(){
-    return future.wait_for(std::chrono::microseconds(0)) == std::future_status::ready;
-}
-
-cv::Mat& imageCapture::getFrame(){
-    return transformedFrame;
+    readImage.width = camWidth;
+    readImage.height = camHeight;
+    readImage.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
+    readImage.mipmaps = 1;
+    readImage.data = (void*)resizedMat.data;
+    std::cout << "Frame to image" << std::endl;
 }
 
 void imageCapture::draw(float x, float y, float w, float h){
@@ -91,7 +120,7 @@ void imageCapture::drawGui(){
     prevMouse = GetMousePosition();
     
     //TODO: Remove, just for debug purposes
-    if (GetKeyPressed() == ' ')
+    if (IsMouseButtonPressed(1))
     {
         calibrate = !calibrate;
     }

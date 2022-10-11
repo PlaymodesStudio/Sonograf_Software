@@ -33,7 +33,7 @@ public:
     
     bool isFreezePressed(){
         if(freeze){
-            freeze = false;
+            //freeze = false;
             return true;
         }
         return false;
@@ -72,7 +72,10 @@ private:
     bool captureHold;
     bool freezeHold;
     
-    
+#if __linux__
+    I2c * bus;
+    bool readOrWrite;
+#endif
 };
 
 #endif /* physicalControls_h */

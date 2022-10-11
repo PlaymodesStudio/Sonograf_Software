@@ -11,12 +11,11 @@
 #include "osc/OscOutboundPacketStream.h"
 #include "ip/UdpSocket.h"
 
-#include "imageCapture.h"
-#include "imageRead.h"
-
 #define OUTPUT_BUFFER_SIZE 4096
 
 #include <vector>
+#include <string>
+#include <memory>
 
 
 enum ScaleTypes_{

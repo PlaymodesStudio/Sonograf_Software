@@ -22,6 +22,7 @@ public:
 private:
     Vector2 points[722];
     float vals[720];
+    float readVals[720];
 };
 
 #endif /* imageRead_h */

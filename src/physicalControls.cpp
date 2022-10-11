@@ -10,9 +10,9 @@
 
 physicalControls::physicalControls(){
 #if __linux__
-    I2c * bus;
     bus = new I2c("/dev/i2c-1");
     bus->addressSet(0x08);
+    readOrWrite = true;
 #endif
     //TODO: Revisar Botons init
     modeToggle = 0;
@@ -44,23 +44,37 @@ physicalControls::physicalControls(){
 
 void physicalControls::readValues(){
 #if __linux__
-    std::vector<uint8_t> data;
-    data.resize(12);
+    uint8_t data[12];
     for(int i = 0; i < 6; i++){
-        bus->writeByte(0x20+i, 0x01);
-        bus->readBlock(0x20+i, 2, data.data() + (i*2));
+        bus->writeByte(0x10+i, 0x01);
+        bus->readBlock(0x10+i, 2, data + (i*2));
     }
-    modeToggle (data[11]<<8|data[10]) > 100;
-    captureButton = (data[9]<<8|data[8]) > 100;
-    freezeButton = (data[5]<<8|data[4]) > 100;
-    scaleButton = (data[1]<<8|data[0]) > 100;
-    
+    readOrWrite = !readOrWrite;
+
+    //if(!readOrWrite){
+    modeToggle_prevState = modeToggle;
+    captureButton_prevState = captureButton;
+
+        modeToggle = (data[11]<<8|data[10]) < 2048;
+        captureButton = (data[9]<<8|data[8]) < 2048;
+        freezeButton = (data[5]<<8|data[4]) < 2048;
+        scaleButton = (data[1]<<8|data[0]) < 2048;
+	
+	if(captureButton && !captureButton_prevState) capture = true;
+
+        mode = modeToggle;
+        //capture = captureButton;
+        freeze = freezeButton;
+        if(scaleButton) scale = ((scale +1) % 9);
+
+        //std::cout << (data[1]<<8|data[0]) << " - " <<(data[3]<<8|data[2]) << " - " << (data[5]<<8|data[4]) << " - " << (data[7]<<8|data[6]) << " - " << (data[9]<<8|data[8]) << " - " << (data[11]<<8|data[10]) << std::endl;
+    //}
     speedKnob = (data[7]<<8|data[6]);
     transposeKnob = (data[3]<<8|data[2]);
     
     //TODO:
-    speedValue = speedKnob / 1024;
-    transposeValue = transposeKnob / 1024 * 24 - 12;
+    speedValue = (1 - ((float)speedKnob / 4096.0f)) *100;
+    transposeValue = (int)((1-((float)transposeKnob / 4096.0f)) * 24) - 12;
 #endif
 }
 

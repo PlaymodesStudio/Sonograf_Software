@@ -18,7 +18,9 @@ public:
     
     void setup();
     void update();
-    void captureNewFrame();
+    void captureNewFrame(Image &dispImage, Image &readImage);
+
+    void getAndProcessImage(Image &dispImage, Image &readImage);
     
     bool isFrameNew();
     cv::Mat& getFrame();
@@ -44,7 +46,9 @@ private:
     cv::Mat capturedFrame;
     cv::Mat colorFrame;
     cv::Mat flippedImage;
+    cv::Mat warpedFrame;
     cv::Mat transformedFrame;
+    cv::Mat resizedMat;
 
     //Gui Vars
     int anchorDragIdx;
