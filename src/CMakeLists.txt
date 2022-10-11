@@ -1,9 +1,14 @@
 include_directories(src)
-add_executable(Sonograf main.cpp imageCapture.cpp imageRead.cpp physicalControls.cpp scManager.cpp)
-
 if(NOT APPLE)
-    add_subdirectory(i2c)
+    include_directories(i2c)
+    add_executable(Sonograf main.cpp imageCapture.cpp imageRead.cpp physicalControls.cpp scManager.cpp i2c/i2c.cpp i2c/smbus.cpp)
+else()
+    add_executable(Sonograf main.cpp imageCapture.cpp imageRead.cpp physicalControls.cpp scManager.cpp)
 endif()
+
+#if(NOT APPLE)
+#    add_subdirectory(i2c)
+#endif()
 
 target_link_libraries(${PROJECT_NAME} raylib)
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
