@@ -46,7 +46,11 @@ void imageCapture::setup(){
     capture.set(cv::CAP_PROP_FRAME_HEIGHT, camHeight);
 }
 
-cv::Mat& imageCapture::update(){
+void imageCapture::captureNewFrame(){
+    future = std::async(std::launch::async, &imageCapture::update, this);
+}
+
+void imageCapture::update(){
     //TODO: Do this in a seperate thread
     bool captured = capture.read(capturedFrame);
     if(!captured){
@@ -67,6 +71,14 @@ cv::Mat& imageCapture::update(){
         cv::Mat transform = getPerspectiveTransform(&srcPoints[0], &dstPoints[0]);
         warpPerspective(flippedImage, transformedFrame, transform, transformedFrame.size(), cv::INTER_LINEAR);
     }
+    //return transformedFrame;
+}
+
+bool imageCapture::isFrameNew(){
+    return future.wait_for(std::chrono::microseconds(0)) == std::future_status::ready;
+}
+
+cv::Mat& imageCapture::getFrame(){
     return transformedFrame;
 }
 
@@ -134,7 +146,7 @@ void imageCapture::drawGui(){
             Color color = GREEN;
             if (i == anchorSelectIdx)
                 color = RED;
-
+            
             DrawCircle(anchorPoints[i].x, anchorPoints[i].y, 20, color);
         }
     }

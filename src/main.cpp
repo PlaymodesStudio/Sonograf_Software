@@ -31,6 +31,7 @@
 #include "imageCapture.h"
 #include "imageRead.h"
 #include "scManager.h"
+#include <thread>
 
 int main(void)
 {
@@ -46,12 +47,10 @@ int main(void)
     SetMouseCursor(4);
     SetTraceLogLevel(100);
     //--------------------------------------------------------------------------------------
-    
     imageCapture capture(screenWidth, screenHeight);
     capture.setup();
 
     imageRead liveReader;
-    liveReader.setup(screenWidth, screenHeight);
     
     scManager supercollider;
     supercollider.setup("127.0.0.1", 57110);
@@ -62,17 +61,40 @@ int main(void)
     
     //Variables
     int currentScaleSize = 720;
+    float currentPosition = 0;
+    std::vector<Image> images;
+    Texture2D textures[2];
 
+    images.resize(1);
+    images[0].width = screenWidth;
+    images[0].height = screenHeight;
+    images[0].format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
+    images[0].mipmaps = 1;
+    capture.captureNewFrame();
+    while(!capture.isFrameNew());
+    images[0].data = capture.getFrame().data;
     // Main loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
         // Update
         //----------------------------------------------------------------------------------
+        if(capture.isFrameNew()){
+            capture.captureNewFrame();
+        }
+        
+        
         controls.readValues();
+        
+        currentPosition += controls.getSpeed();
+        if(currentPosition >= screenWidth) currentPosition -= screenWidth;
         
         currentScaleSize = supercollider.getScaleSize(controls.getScale());
         
-        liveReader.update(capture.update(), currentScaleSize, 0);
+        if(capture.isFrameNew()){
+            images[0].data = (void *)(capture.getFrame().data);
+        }
+        
+        liveReader.update(images[0], currentScaleSize, (int)currentPosition);
         
         supercollider.setScale(controls.getScale(), controls.getTranspose());
         supercollider.sendAmps(liveReader.getValues(), currentScaleSize);
@@ -81,15 +103,20 @@ int main(void)
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-        ClearBackground(RAYWHITE);
+        ClearBackground(WHITE);
+        textures[0] = LoadTextureFromImage(images[0]);
+        DrawTextureEx(textures[0], (Vector2){0, 0}, 0.0f, 1.0f, WHITE);
         liveReader.draw(supercollider.getScaleSize(controls.getScale()));
         capture.drawGui();
         controls.drawGui();
+        
+        
         
         //TODO: Better mouse drawing if in linux
 #if __linux__
         DrawCircle(GetMousePosition().x, GetMousePosition().y, 10, WHITE);
 #endif
+        DrawFPS(screenWidth - 30, screenHeight - 30);
         EndDrawing();
         //----------------------------------------------------------------------------------
     }

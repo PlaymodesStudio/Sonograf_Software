@@ -10,18 +10,24 @@
 
 #include "raylib.h"
 #include "opencv2/opencv.hpp"
+#include <future>
 
 class imageCapture{
 public:
     imageCapture(int width, int height);
     
     void setup();
-    cv::Mat& update();
+    void update();
+    void captureNewFrame();
+    
+    bool isFrameNew();
+    cv::Mat& getFrame();
 
     void draw(float x = 0, float y = 0, float w = -1, float h = -1);
     void drawGui();
     
 private:
+    std::future<void> future;
     //Setings
     int camWidth;
     int camHeight;
