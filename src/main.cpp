@@ -32,6 +32,7 @@
 #include "imageRead.h"
 #include "scManager.h"
 #include <thread>
+#include <chrono>
 
 int main(void)
 {
@@ -55,7 +56,8 @@ int main(void)
     imageRead liveReader;
     
     scManager supercollider;
-    supercollider.setup("192.168.1.111", 57110);
+    //supercollider.setup("192.168.1.121", 57110);
+    supercollider.setup("127.0.0.1", 57110);
     supercollider.initialize();
 
     //i2c
@@ -69,6 +71,7 @@ int main(void)
     Texture2D textures[2];
     bool loadNextImage = false;
     bool isCapturing = false;
+    bool calibrate = true;
 
     displayImages.resize(1);
     displayImages[0].width = screenWidth;
@@ -82,29 +85,56 @@ int main(void)
     readImages[0].format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
     readImages[0].mipmaps = 1;
 
+    
+
+    Image image = LoadImage("../assets/splash.png");
+    Texture2D splashscreen = LoadTextureFromImage(image);
+    UnloadImage(image);
+
+    BeginDrawing();
+    DrawTexture(splashscreen, 0, 0, WHITE);
+    EndDrawing();
+
+    capture.setCalibrate(calibrate);
     capture.captureNewFrame(displayImages[0],  readImages[0]);
     while(!capture.isFrameNew());
-    //displayImages[0].data = capture.getFrame().data;
     textures[0] = LoadTextureFromImage(displayImages[0]);
+
+
+//Wait splashScreen
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
     // Main loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
         // Update
         //----------------------------------------------------------------------------------
-	if(!isCapturing)
-        	controls.readValues();
+	    controls.readValues();
 
-        capture.update();
-        if(capture.isFrameNew()){
-		       if(controls.isCapturePressed()){
-            std::cout << "Begin Capture" << std::endl;
-            capture.captureNewFrame(displayImages[0], readImages[0]);
-            loadNextImage = true;
-	    isCapturing = true;
+
+	    if (IsMouseButtonPressed(1))
+	    {
+		    calibrate = !calibrate;
+		    capture.setCalibrate(calibrate);
+		    if(capture.isFrameNew()){
+			    capture.captureNewFrame(displayImages[0], readImages[0]);
+			    loadNextImage = true;
+			    isCapturing = true;
+		    }
+		    float zeros[360] = {0};
+		    supercollider.sendAmps(zeros, 360);
 	    }
-        }
-        
-        
+
+	    capture.update();
+	    if(capture.isFrameNew()){
+		    if(controls.isCapturePressed()){
+			    capture.captureNewFrame(displayImages[0], readImages[0]);
+			    loadNextImage = true;
+			    isCapturing = true;
+		    }
+	    }
+
+       if(!calibrate){ 
        if(!controls.isFreezePressed()) 
         	currentPosition += (GetFrameTime() * controls.getSpeed() * 100);
        
@@ -112,9 +142,12 @@ int main(void)
         
         currentScaleSize = supercollider.getScaleSize(controls.getScale());
         
+        liveReader.update(readImages[0], currentScaleSize, (int)currentPosition);
+        supercollider.setScale(controls.getScale(), controls.getTranspose());
+        supercollider.sendAmps(liveReader.getValues(), 360);
+       }
         if(capture.isFrameNew() && loadNextImage){
             //images[0].data = (void *)(capture.getFrame().data);
-            std::cout << "Load Image" << std::endl;
             UnloadTexture(textures[0]);
             textures[0] = LoadTextureFromImage(displayImages[0]);
             loadNextImage = false;
@@ -126,29 +159,20 @@ int main(void)
             textures[0] = LoadTextureFromImage(readImages[0]);
         }
         
-        liveReader.update(readImages[0], 720, (int)currentPosition);
-        supercollider.setScale(controls.getScale(), controls.getTranspose());
-        supercollider.sendAmps(liveReader.getValues(), 360);
-
         // Draw
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
         ClearBackground(WHITE);
-        //textures[0] = LoadTextureFromImage(images[0]);
         DrawTextureEx(textures[0], (Vector2){0, 0}, 0.0f, 1.0f, WHITE);
-        liveReader.draw(720);//supercollider.getScaleSize(controls.getScale()));
+	if(!calibrate){
+        	liveReader.draw(currentScaleSize);
+	}
         capture.drawGui();
         controls.drawGui();
         
         
-        //TODO: Better mouse drawing if in linux
-#if __linux__
-        DrawCircle(GetMousePosition().x, GetMousePosition().y, 10, BLACK);
-#endif
-        DrawFPS(screenWidth - 100, screenHeight - 30);
         EndDrawing();
-        //std::cout << "Loop " << GetFPS() << std::endl;
         //----------------------------------------------------------------------------------
     }
     
