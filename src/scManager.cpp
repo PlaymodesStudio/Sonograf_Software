@@ -13,65 +13,52 @@ scManager::scManager(){
         return ((value - inputMin) / (inputMax - inputMin) * (outputMax - outputMin) + outputMin);
     };
     
+	//Mt [0-12]
+	//Chro (0-1-2-3-4-5-6-7-8-9-10-11)
+	//Maj (0-2-4-5-7-9-11)
+	//Pent (0-2-4-7-9)
+	//hira (0-1-5-7-10)
+	//whole (0-2-4-6-8-10)
+
     //Fill scales;
     //Mircotonal
     scales[0].resize(360);
     for(int i = 0; i < 360; i++){
-        scales[0][i] = map(i, 0, 359, 108, 48);
+        scales[0][i] = map(i, 0, 359, 120, 48);
+    }
+    
+    //Chromatica
+    scales[1].resize(72);
+    for(int i = 0; i < scales[1].size(); i++){
+        scales[1][i] = 120-i;
     }
     
     //Major
-    scales[1].resize(60);
-    for(int i = 0; i < 60; i++){
-        scales[1][i] = 108-i;
+    scales[2].resize(42);
+    int major[7] = {0, 2, 4, 5, 7, 9, 11};
+    for(int i = 0; i < scales[2].size(); i++){
+        scales[2][scales[2].size()-i-1] = 48+major[i%7]+(12*(int)(i/7));
     }
     
-    //Minor
-    scales[2].resize(60);
-    for(int i = 0; i < 60; i++){
-        scales[2][i] = 108-i;
+    //Pentatonic
+    scales[3].resize(30);
+    int penta[5] = {0, 2, 4, 7, 9};
+    for(int i = 0; i < scales[3].size(); i++){
+        scales[3][scales[3].size()-i-1] = 48+penta[i%5]+(12*(int)(i/5));
     }
     
-    //Major_Pentatonic
-    scales[3].resize(60);
-    for(int i = 0; i < 60; i++){
-        scales[3][i] = 108-i;
-    }
-    
-    //Minor_Pentatonic
-    scales[4].resize(60);
-    for(int i = 0; i < 60; i++){
-        scales[4][i] = 108-i;
-    }
-    
-    //Major_Harmonic
-    scales[5].resize(60);
-    for(int i = 0; i < 60; i++){
-        scales[5][i] = 108-i;
-    }
-    
-    //Minor_Harmonic
-    scales[6].resize(60);
-    for(int i = 0; i < 60; i++){
-        scales[6][i] = 108-i;
-    }
-    
-    //Hirajoshi
-    scales[7].resize(60);
-    for(int i = 0; i < 60; i++){
-        scales[7][i] = 108-i;
-    }
-    
-    //Arabic
-    scales[8].resize(60);
-    for(int i = 0; i < 60; i++){
-        scales[8][i] = 108-i;
+    //Horiji
+    scales[4].resize(30);
+    int hoi[5] = {0, 1, 5, 7, 10};
+    for(int i = 0; i < scales[4].size(); i++){
+        scales[4][scales[4].size()-i-1] = 48+hoi[i%5]+(12*(int)(i/5));
     }
     
     //Wholetone
-    scales[9].resize(60);
-    for(int i = 0; i < 60; i++){
-        scales[9][i] = 108-i;
+    scales[5].resize(36);
+    int whole[6] = {0, 2, 4, 6, 8, 10};
+    for(int i = 0; i < scales[5].size(); i++){
+        scales[5][scales[5].size()-i-1] = 48+whole[i%6]+(12*(int)(i/6));
     }
 }
 
@@ -125,7 +112,9 @@ void scManager::initialize(){
 //    int nodeID = 2000;
 //    int position = 0;
 //    int groupID = 1;
-    setScale(0, 0);//Chromatic no transpose
+    setScale(0, 0);//Microtonal no transpose
+		    float zeros[360] = {0};
+		    sendAmps(zeros, 360);
 }
 
 void scManager::update(){
@@ -166,8 +155,8 @@ void scManager::sendAmps(float amps[], int size){
             << 2000 << "amp" << 360; //NodeId / Param Name / Size
         
     for(int i = 0; i < 360; i++){
-        //TODO: Que es aquest 10?
-        if(i < size) p << amps[i];
+        //TODO: Que es aquest 20?
+        if(i < size) p << amps[i]*20;
         else p << 0.0f;
     }
     
