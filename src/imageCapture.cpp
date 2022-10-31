@@ -175,8 +175,26 @@ void imageCapture::drawGui(){
             Color color = GREEN;
             if (i == anchorSelectIdx)
                 color = RED;
+
+	    float radius = 20;
+	    float diagonalRadius = (radius/2)*sqrt(2);
             
-            DrawCircle(anchorPoints[i].x, anchorPoints[i].y, 20, color);
+	    DrawCircleLines(anchorPoints[i].x, anchorPoints[i].y, 20, color);
+	    DrawLine(anchorPoints[i].x - diagonalRadius, 
+			    anchorPoints[i].y - diagonalRadius,
+			    anchorPoints[i].x + diagonalRadius,
+			    anchorPoints[i].y + diagonalRadius, color);
+	    DrawLine(anchorPoints[i].x + diagonalRadius, 
+			    anchorPoints[i].y - diagonalRadius,
+			    anchorPoints[i].x - diagonalRadius,
+			    anchorPoints[i].y + diagonalRadius, color);
         }
+
+	//Draw cursor
+#if __linux__
+	Vector2 mPos{GetMousePosition().x, GetMousePosition().y}; 
+	DrawTriangle(mPos, Vector2Add(mPos, (Vector2){0, 32}), Vector2Add(mPos, (Vector2){8, 24}), BLACK);
+	DrawTriangle(mPos, Vector2Add(mPos, (Vector2){8, 24}), Vector2Add(mPos, (Vector2){20, 24}), BLACK);
+#endif
     }
 }
