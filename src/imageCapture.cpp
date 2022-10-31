@@ -51,11 +51,9 @@ void imageCapture::captureNewFrame(Image &dispImage, Image &readImage){
 }
 
 void imageCapture::update(){
-    // bool captured = capture.grab();
-    // if(!captured){
-    //     std::cout << "ERROR! Frame not captured" << std::endl;
-    // }
+
 }
+
 
 bool imageCapture::isFrameNew(){
     return future.wait_for(std::chrono::microseconds(0)) == std::future_status::ready;
@@ -66,10 +64,8 @@ cv::Mat& imageCapture::getFrame(){
 }
 
 void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage){
-    std::cout << "Capture func called" << std::endl;
     for(int i = 0; i < 5; i++) capture.grab();
     bool captured = capture.retrieve(capturedFrame);
-    std::cout << "Frame Read" << std::endl;
     if(!captured){
         std::cout << "ERROR! Frame not captured" << std::endl;
     }
@@ -87,7 +83,6 @@ void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage){
         }
         cv::Mat transform = getPerspectiveTransform(&srcPoints[0], &dstPoints[0]);
         warpPerspective(flippedImage, warpedFrame, transform, transformedFrame.size(), cv::INTER_CUBIC);
-        std::cout << "Frame Warped" << std::endl;
     }
     cv::cvtColor(warpedFrame, capturedFrame, cv::COLOR_RGB2GRAY);
     cv::threshold(capturedFrame, transformedFrame, 100, 255, cv::THRESH_BINARY);
@@ -95,7 +90,6 @@ void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage){
     //cv::resize(transformedFrame, resizedMat, cv::Size(camWidth, reducedHeight), cv::INTER_MAX);
     cv::bitwise_not(transformedFrame, flippedImage);
     cv::cvtColor(flippedImage, resizedMat, cv::COLOR_GRAY2RGB);
-    std::cout << "Frame Thresholded" << std::endl;
     //TODO: Inverse image, make adaptative threshold, etc
     dispImage.width = camWidth;
     dispImage.height = camHeight;
@@ -108,7 +102,6 @@ void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage){
     readImage.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
     readImage.mipmaps = 1;
     readImage.data = (void*)resizedMat.data;
-    std::cout << "Frame to image" << std::endl;
 }
 
 void imageCapture::draw(float x, float y, float w, float h){
