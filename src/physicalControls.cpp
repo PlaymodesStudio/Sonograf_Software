@@ -7,13 +7,13 @@
 
 #include "physicalControls.h"
 #include "raygui.h"
+#include <iostream>
+#include <clocale>
+
+#define MAXVAL 3300.0
+#define MIDVAL 1650
 
 physicalControls::physicalControls(){
-#if __linux__
-    bus = new I2c("/dev/i2c-1");
-    bus->addressSet(0x08);
-    readOrWrite = true;
-#endif
     //TODO: Revisar Botons init
     modeToggle = 0;
     captureButton = 0;
@@ -38,57 +38,159 @@ physicalControls::physicalControls(){
     freeze = false;
     captureHold = false;
     freezeHold = false;
-    
-    
+
+    transposeLastValue = 0;
+
+    //Messges init
+    scaleMessageTimer = 0;
+    transposeMessageTimer = 0;
+    modeMessageTimer = 0;
+
+
+    myFont = LoadFontEx("../assets/FuturaStd-Heavy.otf", 30, 0, 250);
+
+    //Create Socket
+    UdpListeningReceiveSocket *socket = nullptr;
+    {
+	    IpEndpointName name(IpEndpointName::ANY_ADDRESS, 7777);
+	    socket = new UdpListeningReceiveSocket(name, this);
+	    auto deleter = [](UdpListeningReceiveSocket*socket){
+		    // tell the socket to shutdown
+		    socket->Break();
+		    delete socket;
+	    };
+	    auto newPtr = std::unique_ptr<UdpListeningReceiveSocket, decltype(deleter)>(socket, deleter);
+	    listenSocket = std::move(newPtr);
+    }
+    listenThread = std::thread([this]{
+	    while(listenSocket){
+    		listenSocket->Run();
+   	}
+    });
+
+    listenThread.detach();
 }
 
 void physicalControls::readValues(){
-#if __linux__
-    uint8_t data[12];
-    for(int i = 0; i < 6; i++){
-        bus->writeByte(0x10+i, 0x01);
-        bus->readBlock(0x10+i, 2, data + (i*2));
-    }
-    readOrWrite = !readOrWrite;
+	mutex.lock();
 
-    //if(!readOrWrite){
-    modeToggle_prevState = modeToggle;
-    captureButton_prevState = captureButton;
-
-        modeToggle = (data[11]<<8|data[10]) < 2048;
-        captureButton = (data[9]<<8|data[8]) < 2048;
-        freezeButton = (data[5]<<8|data[4]) < 2048;
-        scaleButton = (data[1]<<8|data[0]) < 2048;
-	
 	if(captureButton && !captureButton_prevState) capture = true;
 
         mode = modeToggle;
-        //capture = captureButton;
         freeze = freezeButton;
-        if(scaleButton) scale = ((scale +1) % 9);
 
-        //std::cout << (data[1]<<8|data[0]) << " - " <<(data[3]<<8|data[2]) << " - " << (data[5]<<8|data[4]) << " - " << (data[7]<<8|data[6]) << " - " << (data[9]<<8|data[8]) << " - " << (data[11]<<8|data[10]) << std::endl;
-    //}
-    speedKnob = (data[7]<<8|data[6]);
-    transposeKnob = (data[3]<<8|data[2]);
-    
+        if(scaleButton && !scaleButton_prevState){
+	       	scale = ((scale +1) % 6);
+		scaleMessageTimer = 60;
+		std::string m = "ESCALA: ";
+		switch(scale){
+			case 0: m+="MICROTONAL"; break;
+			case 1: m+="CROMATICA"; break;
+			case 2: m+="MAJOR"; break;
+			case 3: m+="PENTATONICA"; break;
+			case 4: m+="HIRAJOSHI"; break;
+			case 5: m+="TO SENCER"; break;
+			default: m+="none"; break;
+		}
+		scaleMessage = m;
+	}
+
+	//TODO: FIRMWARE V2
+	if(modeToggle != modeToggle_prevState){
+		modeMessageTimer = 60;
+		if(modeToggle)		
+			modeMessage = "MODE: ESTATIC";
+		else
+			modeMessage = "MODE: DINAMIC";
+	}
+
+
+	modeToggle_prevState = modeToggle;
+	captureButton_prevState = captureButton;
+	scaleButton_prevState = scaleButton;
+
     //TODO:
-    speedValue = (1 - ((float)speedKnob / 4096.0f)) *100;
-    transposeValue = (int)((1-((float)transposeKnob / 4096.0f)) * 24) - 12;
-#endif
+    speedValue = (1 - ((float)speedKnob / MAXVAL)) *100;
+    transposeValue = (int)((1-((float)transposeKnob / MAXVAL)) * 24) - 12;
+    
+    if(transposeValue != transposeLastValue){
+	transposeMessageTimer = 60;
+	transposeMessage = "TRANSPOSICIO: " + std::to_string(transposeValue);
+    }
+
+    transposeLastValue = transposeValue;
+
+    mutex.unlock();
 }
 
 void physicalControls::drawGui(){
-    //if(GuiWindowBox((Rectangle){0, 0, 120, 200}, "Physical Controls")){
-    DrawRectangle(0, 0, 300, 300, (Color){ 0, 0, 0, 127 } );
-    speedValue = GuiSlider((Rectangle){100, 10, 100, 20}, "Speed", TextFormat("%2.2f", (float)speedValue), speedValue, 0, 100);
-    transposeValue = GuiSlider((Rectangle){100, 40, 100, 20}, "Transpose", TextFormat("%i", (int)transposeValue), transposeValue, -12, 12);
-    scale = GuiSlider((Rectangle){100, 70, 100, 20}, "Scale", TextFormat("%i", (int)scale), scale, 0, 9);
-    mode = GuiCheckBox((Rectangle){100, 100, 20, 20}, "Mode", mode);
-    capture = GuiCheckBox((Rectangle){100, 130, 20, 20}, "Capture", capture);
-    freeze = GuiCheckBox((Rectangle){100, 160, 20, 20}, "Freeze", freeze);
-    captureHold = GuiCheckBox((Rectangle){100, 190, 20, 20}, "Capture Hold", captureHold);
-    freezeHold = GuiCheckBox((Rectangle){100, 220, 20, 20}, "Freeze Hold", freezeHold);
-    
-    //}
+	if(scaleMessageTimer > 0){
+		DrawInfoString(scaleMessage, 2);
+		scaleMessageTimer--;
+	}
+	if(transposeMessageTimer > 0){
+		DrawInfoString(transposeMessage, 1);
+		transposeMessageTimer--;
+	}
+	if(modeMessageTimer > 0){
+		DrawInfoString(modeMessage, 0);
+		modeMessageTimer--;
+	}
+
 }
+
+    void physicalControls::DrawInfoString(std::string s, int align){
+
+	int screenWidth = 1280;
+	int screenHeight = 720;
+	int fontSize = 30;
+	int spacing = 1;
+	int textMargin = 5;
+	int outerMargin = 10;
+	int textLength = MeasureTextEx(myFont, s.c_str(), fontSize, spacing).x;
+	int rectPosX = 0;
+	switch(align){
+		case 0: 
+			rectPosX = textMargin + outerMargin;
+			break;
+		case 1:
+			rectPosX = screenWidth/2 - textLength/2 - textMargin;
+			break;
+		case 2:
+			rectPosX = screenWidth - textLength - textMargin - textMargin - outerMargin;
+			break;
+		default:
+			break;
+	}
+			
+
+	DrawRectangle(rectPosX, 
+			screenHeight - fontSize - textMargin - textMargin - outerMargin,
+		       	textLength + textMargin + textMargin,
+		       	fontSize + textMargin + textMargin,
+		       	(Color){ 0, 0, 0, 127} );
+
+	DrawTextEx(myFont,
+			s.c_str(),
+		       	(Vector2){float(rectPosX + textMargin),
+		       		float(screenHeight - textMargin - fontSize - outerMargin)},
+			fontSize,
+			spacing,
+		       	WHITE);
+    }
+
+    void physicalControls::ProcessMessage(const osc::ReceivedMessage &m, const IpEndpointName &remoteEndPoint){
+	    if(mutex.try_lock()){
+		    int i = 0;
+		    for(osc::ReceivedMessage::const_iterator arg = m.ArgumentsBegin(); arg != m.ArgumentsEnd(); ++arg){
+			if(i == 0) scaleButton = arg->AsInt32() < MIDVAL;
+		    	else if(i == 1) transposeKnob = arg->AsInt32(); 
+		    	else if(i == 2) freezeButton = arg->AsInt32() < MIDVAL;
+		    	else if(i == 3) speedKnob = arg->AsInt32(); 
+		    	else if(i == 4) captureButton = arg->AsInt32() < MIDVAL;
+			else if(i == 5) modeToggle = arg->AsInt32() < MIDVAL;
+			i++;
+		    }
+		    mutex.unlock();
+	    }
+    }

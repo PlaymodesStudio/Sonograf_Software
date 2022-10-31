@@ -8,11 +8,18 @@
 #ifndef physicalControls_h
 #define physicalControls_h
 
-#if __linux__
-    #include "i2c.h"
-#endif
+#include "osc/OscTypes.h"
+#include "osc/OscPacketListener.h"
+#include "ip/UdpSocket.h"
+#include <memory>
+#include <functional>
+#include <thread>
+#include <mutex>
+#include <string>
+#include <deque>
+#include <raylib.h>
 
-class physicalControls{
+class physicalControls : public osc::OscPacketListener{
 public:
     physicalControls();
     
@@ -46,8 +53,15 @@ public:
     bool isFreezeHold(){
         return freezeHold;
     }
+
+protected:
+
+    virtual void ProcessMessage(const osc::ReceivedMessage &m, const IpEndpointName &remoteEndPoint);
     
 private:
+
+    void DrawInfoString(std::string s, int align);
+
     bool modeToggle;
     bool captureButton;
     bool freezeButton;
@@ -72,10 +86,20 @@ private:
     bool captureHold;
     bool freezeHold;
     
-#if __linux__
-    I2c * bus;
-    bool readOrWrite;
-#endif
+    int transposeLastValue;
+
+    std::unique_ptr<UdpListeningReceiveSocket, std::function<void(UdpListeningReceiveSocket*)>> listenSocket;
+    std::thread listenThread;
+    std::mutex mutex;
+
+    int scaleMessageTimer;
+    std::string scaleMessage;
+    int transposeMessageTimer;
+    std::string transposeMessage;
+    int modeMessageTimer;
+    std::string modeMessage;
+
+    Font myFont;
 };
 
-#endif /* physicalControls_h */
+#endif/* physicalControls_h */
