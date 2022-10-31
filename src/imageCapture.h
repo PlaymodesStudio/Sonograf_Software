@@ -27,6 +27,8 @@ public:
 
     void draw(float x = 0, float y = 0, float w = -1, float h = -1);
     void drawGui();
+   
+    void setCalibrate(bool c){calibrate = c;};
     
 private:
     std::future<void> future;

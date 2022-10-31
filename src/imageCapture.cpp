@@ -120,10 +120,6 @@ void imageCapture::drawGui(){
     prevMouse = GetMousePosition();
     
     //TODO: Remove, just for debug purposes
-    if (IsMouseButtonPressed(1))
-    {
-        calibrate = !calibrate;
-    }
     
     
     // Gui Warping
