@@ -16,6 +16,8 @@ imageRead::imageRead(){
 void imageRead::update(Image image, int size, int position){
     points[0].x = position;
     points[0].y = 0;
+    points_third[0].x = (GetScreenWidth() /3.0f);
+    points_third[0].y = 0;
     for (int i = 0; i < size; i++)
     {
 	int index = (((float)i / (float)size) * image.height);
@@ -30,18 +32,26 @@ void imageRead::update(Image image, int size, int position){
 	vals[i] = readVals[i];
         points[i+1].x = position - (readVals[i] * 50); //Graphic scaling
         points[i+1].y = ((float)(i+1) / (float)(size+1)) * 720;
+        points_third[i+1].x = (GetScreenWidth() /3.0f) - (readVals[i] * 50);
+        points_third[i+1].y = points[i+1].y;
     }
     for (int i = size; i < 360; i++){
 	vals[i] = 0;
     }
     points[size+1].x = position;
     points[size+1].y = 720;
+    points_third[size+1].x = (GetScreenWidth() / 3.0f);
+    points_third[size+1].y = 720;
 }
 
-void imageRead::draw(int size){
+void imageRead::draw(int size, int mode){
     //Draw sonify line;
     rlSetLineWidth(3);
-    DrawLineStrip(points, size+2, WHITE);
+    if(mode == 0)
+        DrawLineStrip(points, size+2, WHITE);
+    else
+        DrawLineStrip(points_third, size+2, RED);
+        
 }
 
 

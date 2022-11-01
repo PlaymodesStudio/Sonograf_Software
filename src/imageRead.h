@@ -15,12 +15,13 @@ public:
     imageRead();
     
     void update(Image image, int size, int position);
-    void draw(int size);
+    void draw(int size, int mode);
     
     float* getValues(){return vals;};
     
 private:
     Vector2 points[722];
+    Vector2 points_third[722];
     float vals[720];
     float readVals[720];
 };
