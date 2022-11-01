@@ -34,12 +34,14 @@
 #include <thread>
 #include <chrono>
 
+#define NUM_IMAGES 3
 int main(void)
 {
     // Initialization
     //--------------------------------------------------------------------------------------
     int screenWidth = 1280;
     int screenHeight = 720;
+    int dynamicLinePos = screenWidth / 3;
 
     SetConfigFlags(FLAG_VSYNC_HINT);
     InitWindow(screenWidth, screenHeight, "Sonograf");
@@ -66,25 +68,37 @@ int main(void)
     //Variables
     int currentScaleSize = 720;
     float currentPosition = 0;
-    std::vector<Image> displayImages;
-    std::vector<Image> readImages;
-    Texture2D textures[2];
+    Image displayImages[NUM_IMAGES];
+    Image readImages[NUM_IMAGES];
+    Texture2D textures[NUM_IMAGES];
     bool loadNextImage = false;
     bool isCapturing = false;
     bool calibrate = true;
+    size_t numImages = 3;
+    int currentImage = 0;
+    int nextImage = 1;
+    int standbyImage = 2;
+    bool imageJump = false;
+    
+    enum playMode{
+        playMode_static,
+        playMode_dynamic
+    };
+    
+    playMode mode = playMode_static;
 
-    displayImages.resize(1);
-    displayImages[0].width = screenWidth;
-    displayImages[0].height = screenHeight;
-    displayImages[0].format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
-    displayImages[0].mipmaps = 1;
-
-    readImages.resize(1);
-    readImages[0].width = screenWidth;
-    readImages[0].height = screenHeight;
-    readImages[0].format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
-    readImages[0].mipmaps = 1;
-
+    for(int i = 0; i < NUM_IMAGES; i++){
+        displayImages[i].width = screenWidth;
+        displayImages[i].height = screenHeight;
+        displayImages[i].format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
+        displayImages[i].mipmaps = 1;
+        
+        readImages[i].width = screenWidth;
+        readImages[i].height = screenHeight;
+        readImages[i].format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
+        readImages[i].mipmaps = 1;
+    }
+        
     
 
     Image image = LoadImage("../assets/splash.png");
@@ -111,13 +125,20 @@ int main(void)
         //----------------------------------------------------------------------------------
 	    controls.readValues();
 
+        //Mode changed
+        if((int)mode != controls.getMode()){
+            mode = (playMode)controls.getMode();
+        }
 
 	    if (IsMouseButtonPressed(1))
 	    {
 		    calibrate = !calibrate;
 		    capture.setCalibrate(calibrate);
 		    if(capture.isFrameNew()){
-			    capture.captureNewFrame(displayImages[0], readImages[0]);
+                if(mode == playMode_static)
+                    capture.captureNewFrame(displayImages[0], readImages[0]);
+                else
+                    capture.captureNewFrame(displayImages[nextImage], readImages[nextImage]);
 			    loadNextImage = true;
 			    isCapturing = true;
 		    }
@@ -128,46 +149,80 @@ int main(void)
 	    capture.update();
 	    if(capture.isFrameNew()){
 		    if(controls.isCapturePressed()){
-			    capture.captureNewFrame(displayImages[0], readImages[0]);
+                if(mode == playMode_static){
+                    capture.captureNewFrame(displayImages[0], readImages[0]);
+                }else
+                    capture.captureNewFrame(displayImages[standbyImage], readImages[standbyImage]);
 			    loadNextImage = true;
 			    isCapturing = true;
 		    }
 	    }
 
        if(!calibrate){ 
-       if(!controls.isFreezePressed()) 
-        	currentPosition += (GetFrameTime() * controls.getSpeed() * 100);
-       
-        if(currentPosition >= screenWidth) currentPosition -= screenWidth;
-        
-        currentScaleSize = supercollider.getScaleSize(controls.getScale());
-        
-        liveReader.update(readImages[0], currentScaleSize, (int)currentPosition);
-        supercollider.setScale(controls.getScale(), controls.getTranspose());
-        supercollider.sendAmps(liveReader.getValues(), 360);
+           if(!controls.isFreezePressed())
+               currentPosition += (GetFrameTime() * controls.getSpeed() * 100);
+           
+           if(currentPosition >= screenWidth){
+               currentPosition -= screenWidth;
+               imageJump = false;
+           //}
+           //if(!imageJump && currentPosition >= dynamicLinePos){
+               currentImage = nextImage;
+               nextImage = standbyImage;
+               standbyImage = (standbyImage+1) % NUM_IMAGES;
+               imageJump = true;
+           }
+           
+           currentScaleSize = supercollider.getScaleSize(controls.getScale());
+           
+           if(mode == playMode_static)
+               liveReader.update(readImages[0], currentScaleSize, (int)currentPosition);
+           else{
+               int shiftedPosition = currentPosition + dynamicLinePos;
+               if(shiftedPosition >= screenWidth)
+                   liveReader.update(readImages[nextImage], currentScaleSize, (int)shiftedPosition - screenWidth);
+               else
+                   liveReader.update(readImages[currentImage], currentScaleSize, (int)shiftedPosition);
+           }
+           supercollider.setScale(controls.getScale(), controls.getTranspose());
+           supercollider.sendAmps(liveReader.getValues(), 360);
        }
         if(capture.isFrameNew() && loadNextImage){
-            //images[0].data = (void *)(capture.getFrame().data);
-            UnloadTexture(textures[0]);
-            textures[0] = LoadTextureFromImage(displayImages[0]);
+            if(mode == playMode_static){
+                UnloadTexture(textures[0]);
+                
+                textures[0] = LoadTextureFromImage(displayImages[0]);
+            }else{
+                UnloadTexture(textures[standbyImage]);
+                textures[standbyImage] = LoadTextureFromImage(displayImages[standbyImage]);
+            }
             loadNextImage = false;
-	    isCapturing = false;
+            isCapturing = false;
         }
-
+        
         if(IsKeyPressed(KEY_D)){
             UnloadTexture(textures[0]);
             textures[0] = LoadTextureFromImage(readImages[0]);
         }
         
         // Draw
+        
         //----------------------------------------------------------------------------------
         BeginDrawing();
-
+        
         ClearBackground(WHITE);
-        DrawTextureEx(textures[0], (Vector2){0, 0}, 0.0f, 1.0f, WHITE);
-	if(!calibrate){
-        	liveReader.draw(currentScaleSize);
-	}
+        if(mode == playMode_static){
+            DrawTextureEx(textures[0], (Vector2){0, 0}, 0.0f, 1.0f, WHITE);
+        }else{
+            DrawTextureEx(textures[currentImage], (Vector2){/*dynamicLinePos*/-currentPosition, 0}, 0.0f, 1.0f, WHITE);
+            DrawTextureEx(textures[nextImage], (Vector2){/*dynamicLinePos + */screenWidth - currentPosition, 0}, 0.0f, 1.0f, WHITE);
+            DrawTextureEx(textures[0], (Vector2){700, 600}, 0.0f, 0.2f, LIGHTGRAY);
+            DrawTextureEx(textures[1], (Vector2){900, 600}, 0.0f, 0.2f, LIGHTGRAY);
+            DrawTextureEx(textures[2], (Vector2){1100, 600}, 0.0f, 0.2f, LIGHTGRAY);
+        }
+        if(!calibrate){
+            liveReader.draw(currentScaleSize, (int)mode);
+        }
         capture.drawGui();
         controls.drawGui();
         
