@@ -86,17 +86,24 @@ int main(void)
     };
     
     playMode mode = playMode_static;
+    
+    cv::Mat blackDisplayImage(1280, 720, CV_8UC3, cv::Scalar(0, 0, 0));
+    cv::Mat blackReadImage(1280, 720, CV_8UC3, cv::Scalar(0, 0, 0));
 
     for(int i = 0; i < NUM_IMAGES; i++){
         displayImages[i].width = screenWidth;
         displayImages[i].height = screenHeight;
         displayImages[i].format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
         displayImages[i].mipmaps = 1;
+        displayImages[i].data = (void*)blackDisplayImage.data;
         
         readImages[i].width = screenWidth;
         readImages[i].height = screenHeight;
         readImages[i].format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
         readImages[i].mipmaps = 1;
+        readImages[i].data = (void*)blackReadImage.data;
+        
+        textures[i] = LoadTextureFromImage(displayImages[i]);
     }
         
     
@@ -128,6 +135,11 @@ int main(void)
         //Mode changed
         if((int)mode != controls.getMode()){
             mode = (playMode)controls.getMode();
+            for(int i = 0; i < NUM_IMAGES; i++){
+                displayImages[i].data = (void*)blackDisplayImage.data;
+                readImages[i].data = (void*)blackReadImage.data;
+                textures[i] = LoadTextureFromImage(displayImages[i]);
+            }
         }
 
 	    if (IsMouseButtonPressed(1))
