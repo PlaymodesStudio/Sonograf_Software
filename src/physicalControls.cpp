@@ -9,9 +9,13 @@
 #include "raygui.h"
 #include <iostream>
 #include <clocale>
+#include <cmath>
 
-#define MAXVAL 3300.0
-#define MIDVAL 1650
+#define MAXVAL 3300.0f
+#define MIDVAL 1650.0f
+#define MINTIME 0.1f
+#define MIDTIME 4.0f
+#define MAXTIME 12.0f
 
 physicalControls::physicalControls(){
     //TODO: Revisar Botons init
@@ -30,7 +34,7 @@ physicalControls::physicalControls(){
     scaleButton_prevState = 0;
         
     //Useful Values
-    speedValue = 1;
+    speedValue = 4;
     transposeValue = 0;
     scale = 0;
     mode = false;
@@ -110,8 +114,12 @@ void physicalControls::readValues(){
 	scaleButton_prevState = scaleButton;
 
     //TODO:
-    speedValue = (1 - ((float)speedKnob / MAXVAL)) *100;
-    transposeValue = (int)((1-((float)transposeKnob / MAXVAL)) * 24) - 12;
+    if(speedKnob < MIDVAL){
+        speedValue = (MAXTIME - MIDTIME) * pow(((float)speedKnob/MIDVAL)-1, 2) + MIDTIME;
+    }else{
+        speedValue = -(MIDTIME - MINTIME) * pow(((float)speedKnob/MIDVAL)-1, 2) + MIDTIME;
+    }
+    transposeValue = -(int)((((float)transposeKnob / (MAXVAL))) * 25) + 12;
     
     if(transposeValue != transposeLastValue){
 	transposeMessageTimer = 60;

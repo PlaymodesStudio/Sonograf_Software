@@ -160,7 +160,7 @@ int main(void)
 
        if(!calibrate){ 
            if(!controls.isFreezePressed())
-               currentPosition += (GetFrameTime() * controls.getSpeed() * 100);
+               currentPosition += (GetFrameTime() * screenWidth) / controls.getSpeed();
            
            if(currentPosition >= screenWidth){
                currentPosition -= screenWidth;
