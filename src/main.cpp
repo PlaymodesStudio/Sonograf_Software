@@ -97,6 +97,7 @@ int main(void)
     int nextImage = 1;
     int standbyImage = 2;
     bool imageJump = false;
+    int loadingImage = 0;
     
     enum playMode{
         playMode_static,
@@ -181,9 +182,11 @@ int main(void)
 		    capture.setCalibrate(calibrate);
 		    if(capture.isFrameNew()){
                 if(mode == playMode_static)
-                    capture.captureNewFrame(displayImages[0],  readImages[0], displayMat[0], readMat[0]);
+                    loadingImage = 0;
                 else
-                    capture.captureNewFrame(displayImages[nextImage],  readImages[nextImage], displayMat[nextImage], readMat[nextImage]);
+                    loadingImage = nextImage;
+                
+                capture.captureNewFrame(displayImages[loadingImage],  readImages[loadingImage], displayMat[loadingImage], readMat[loadingImage]);
 			    loadNextImage = true;
 			    isCapturing = true;
 		    }
@@ -204,10 +207,12 @@ int main(void)
 	    capture.update();
 	    if(capture.isFrameNew()){
 		    if(controls.isCapturePressed()){
-                if(mode == playMode_static){
-                    capture.captureNewFrame(displayImages[0],  readImages[0], displayMat[0], readMat[0]);
-                }else
-                    capture.captureNewFrame(displayImages[standbyImage],  readImages[standbyImage], displayMat[standbyImage], readMat[standbyImage]);
+                if(mode == playMode_static)
+                    loadingImage = 0;
+                else
+                    loadingImage = standbyImage;
+                
+                capture.captureNewFrame(displayImages[loadingImage],  readImages[loadingImage], displayMat[loadingImage], readMat[loadingImage]);
 			    loadNextImage = true;
 			    isCapturing = true;
 		    }
@@ -243,13 +248,9 @@ int main(void)
            supercollider.sendAmps(liveReader.getValues(), 360);
        }
         if(capture.isFrameNew() && loadNextImage){
-            if(mode == playMode_static){
-                UnloadTexture(textures[0]);
-                textures[0] = LoadTextureFromImage(displayImages[0]);
-            }else{
-                UnloadTexture(textures[standbyImage]);
-                textures[standbyImage] = LoadTextureFromImage(displayImages[standbyImage]);
-            }
+            UnloadTexture(textures[loadingImage]);
+            textures[loadingImage] = LoadTextureFromImage(displayImages[loadingImage]);
+            
             loadNextImage = false;
             isCapturing = false;
         }
