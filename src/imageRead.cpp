@@ -50,7 +50,7 @@ void imageRead::draw(int size, int mode){
     if(mode == 0)
         DrawLineStrip(points, size+2, WHITE);
     else
-        DrawLineStrip(points_third, size+2, RED);
+        DrawLineStrip(points_third, size+2, WHITE);
         
 }
 
