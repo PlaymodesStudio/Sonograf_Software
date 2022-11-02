@@ -105,7 +105,7 @@ void scManager::initialize(){
         << osc::BeginMessage("/g_new") //Create World
             << 1 << 0 << 0 << osc::EndMessage
         << osc::BeginMessage("/s_new") //Create Synth
-            << "KlangTest360_2" << 2000 << 0 << 1 << osc::EndMessage;
+            << /*"KlangTest360_2"*/ "Sonograf" << 2000 << 0 << 1 << osc::EndMessage;
 
     sendSocket->Send(p.Data(), p.Size());
 
@@ -150,13 +150,19 @@ void scManager::setScale(int scale, int transpose){
 void scManager::sendAmps(float amps[], int size){
     osc::OutboundPacketStream p( buffer, OUTPUT_BUFFER_SIZE );
 
+    float ampsSum = 0;
+    for(int i = 0; i < 360; i++){
+	ampsSum += amps[i];
+    }
+    if(ampsSum == 0) ampsSum = 1;
+
     p << osc::BeginBundleImmediate
         << osc::BeginMessage("/n_setn") //Create World
             << 2000 << "amp" << 360; //NodeId / Param Name / Size
         
     for(int i = 0; i < 360; i++){
         //TODO: Que es aquest 20?
-        if(i < size) p << amps[i]*20;
+        if(i < size) p << amps[i]/ampsSum;
         else p << 0.0f;
     }
     
