@@ -119,7 +119,7 @@ void physicalControls::readValues(){
     }else{
         speedValue = -(MIDTIME - MINTIME) * pow(((float)speedKnob/MIDVAL)-1, 2) + MIDTIME;
     }
-    transposeValue = -(int)((((float)transposeKnob / (MAXVAL))) * 25) + 12;
+    transposeValue = (int)((((float)transposeKnob / (MAXVAL))) * 25) - 12;
     
     if(transposeValue != transposeLastValue){
 	transposeMessageTimer = 60;
@@ -192,9 +192,9 @@ void physicalControls::drawGui(){
 		    int i = 0;
 		    for(osc::ReceivedMessage::const_iterator arg = m.ArgumentsBegin(); arg != m.ArgumentsEnd(); ++arg){
 			if(i == 0) scaleButton = arg->AsInt32() < MIDVAL;
-		    	else if(i == 1) transposeKnob = arg->AsInt32(); 
+		    	else if(i == 1) transposeKnob = MAXVAL - 1 - arg->AsInt32(); 
 		    	else if(i == 2) freezeButton = arg->AsInt32() < MIDVAL;
-		    	else if(i == 3) speedKnob = arg->AsInt32(); 
+		    	else if(i == 3) speedKnob = MAXVAL - 1 - arg->AsInt32(); 
 		    	else if(i == 4) captureButton = arg->AsInt32() < MIDVAL;
 			else if(i == 5) modeToggle = arg->AsInt32() < MIDVAL;
 			i++;
