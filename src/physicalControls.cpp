@@ -15,7 +15,7 @@
 #define MIDVAL 1650.0f
 #define MINTIME 0.1f
 #define MIDTIME 4.0f
-#define MAXTIME 12.0f
+#define MAXTIME 48.0f
 
 physicalControls::physicalControls(){
     //TODO: Revisar Botons init
