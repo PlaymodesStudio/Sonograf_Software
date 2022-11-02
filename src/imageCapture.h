@@ -30,6 +30,8 @@ public:
    
     void setCalibrate(bool c){calibrate = c;};
     
+    std::vector<Vector2>& getAnchorPoints(){return anchorPoints;};
+    
 private:
     std::future<void> future;
     //Setings
