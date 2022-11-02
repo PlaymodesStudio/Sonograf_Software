@@ -98,6 +98,7 @@ int main(void)
     int standbyImage = 2;
     bool imageJump = false;
     int loadingImage = 0;
+    bool paused = true;
     
     enum playMode{
         playMode_static,
@@ -174,6 +175,8 @@ int main(void)
                 readImages[i].data = (void*)readMat[i].data;
                 textures[i] = LoadTextureFromImage(displayImages[i]);
             }
+            paused = true;
+            currentPosition = 0;
         }
 
 	    if (IsMouseButtonPressed(1))
@@ -209,8 +212,12 @@ int main(void)
 		    if(controls.isCapturePressed()){
                 if(mode == playMode_static)
                     loadingImage = 0;
-                else
-                    loadingImage = standbyImage;
+                else{
+                    if(paused)
+                        loadingImage = nextImage;
+                    else
+                        loadingImage = standbyImage;
+                }
                 
                 capture.captureNewFrame(displayImages[loadingImage],  readImages[loadingImage], displayMat[loadingImage], readMat[loadingImage]);
 			    loadNextImage = true;
@@ -219,7 +226,7 @@ int main(void)
 	    }
 
        if(!calibrate){ 
-           if(!controls.isFreezePressed())
+           if(!controls.isFreezePressed() && !paused)
                currentPosition += (GetFrameTime() * screenWidth) / controls.getSpeed();
            
            if(currentPosition >= screenWidth){
@@ -253,6 +260,7 @@ int main(void)
             
             loadNextImage = false;
             isCapturing = false;
+            paused = false;
         }
         
         if(IsKeyPressed(KEY_D)){
