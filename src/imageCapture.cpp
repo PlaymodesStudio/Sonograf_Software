@@ -46,8 +46,8 @@ void imageCapture::setup(){
     capture.set(cv::CAP_PROP_FRAME_HEIGHT, camHeight);
 }
 
-void imageCapture::captureNewFrame(Image &dispImage, Image &readImage){
-    future = std::async(std::launch::async, &imageCapture::getAndProcessImage, this, std::ref(dispImage), std::ref(readImage));
+void imageCapture::captureNewFrame(Image &dispImage, Image &readImage, cv::Mat &dispMat, cv::Mat &readMat){
+    future = std::async(std::launch::async, &imageCapture::getAndProcessImage, this, std::ref(dispImage), std::ref(readImage), std::ref(dispMat), std::ref(readMat));
 }
 
 void imageCapture::update(){
@@ -63,7 +63,7 @@ cv::Mat& imageCapture::getFrame(){
     return transformedFrame;
 }
 
-void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage){
+void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage, cv::Mat &dispMat, cv::Mat &readMat){
     for(int i = 0; i < 5; i++) capture.grab();
     bool captured = capture.retrieve(capturedFrame);
     if(!captured){
@@ -72,7 +72,7 @@ void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage){
     
     if(calibrate){
         cv::cvtColor(capturedFrame, colorFrame, cv::COLOR_BGR2RGB);
-        cv::flip(colorFrame, warpedFrame, -1); //Fliping arround both axis
+        cv::flip(colorFrame, dispMat, -1); //Fliping arround both axis
     }
     else{
         cv::cvtColor(capturedFrame, colorFrame, cv::COLOR_BGR2RGB);
@@ -82,26 +82,17 @@ void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage){
             srcPoints[i].y = anchorPoints[i].y;
         }
         cv::Mat transform = getPerspectiveTransform(&srcPoints[0], &dstPoints[0]);
-        warpPerspective(flippedImage, warpedFrame, transform, transformedFrame.size(), cv::INTER_CUBIC);
+        warpPerspective(flippedImage, dispMat, transform, transformedFrame.size(), cv::INTER_CUBIC);
     }
-    cv::cvtColor(warpedFrame, capturedFrame, cv::COLOR_RGB2GRAY);
+    cv::cvtColor(dispMat, capturedFrame, cv::COLOR_RGB2GRAY);
     cv::threshold(capturedFrame, transformedFrame, 100, 255, cv::THRESH_BINARY);
     //cv::adaptiveThreshold(capturedFrame, transformedFrame, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 100, 10);
     //cv::resize(transformedFrame, resizedMat, cv::Size(camWidth, reducedHeight), cv::INTER_MAX);
     cv::bitwise_not(transformedFrame, flippedImage);
-    cv::cvtColor(flippedImage, resizedMat, cv::COLOR_GRAY2RGB);
+    cv::cvtColor(flippedImage, readMat, cv::COLOR_GRAY2RGB);
     //TODO: Inverse image, make adaptative threshold, etc
-    dispImage.width = camWidth;
-    dispImage.height = camHeight;
-    dispImage.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
-    dispImage.mipmaps = 1;
-    dispImage.data = (void*)warpedFrame.data;
-
-    readImage.width = camWidth;
-    readImage.height = camHeight;
-    readImage.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
-    readImage.mipmaps = 1;
-    readImage.data = (void*)resizedMat.data;
+    dispImage.data = (void*)dispMat.data;
+    readImage.data = (void*)readMat.data;
 }
 
 void imageCapture::draw(float x, float y, float w, float h){

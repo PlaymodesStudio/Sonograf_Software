@@ -71,6 +71,8 @@ int main(void)
     Image displayImages[NUM_IMAGES];
     Image readImages[NUM_IMAGES];
     Texture2D textures[NUM_IMAGES];
+    cv::Mat displayMat[NUM_IMAGES];
+    cv::Mat readMat[NUM_IMAGES];
     bool loadNextImage = false;
     bool isCapturing = false;
     bool calibrate = true;
@@ -91,23 +93,24 @@ int main(void)
     cv::Mat blackReadImage(1280, 720, CV_8UC3, cv::Scalar(0, 0, 0));
 
     for(int i = 0; i < NUM_IMAGES; i++){
+        displayMat[i] = cv::Mat(1280, 720, CV_8UC3, cv::Scalar(0, 0, 0));
+        readMat[i] = cv::Mat(1280, 720, CV_8UC3, cv::Scalar(0, 0, 0));
+        
         displayImages[i].width = screenWidth;
         displayImages[i].height = screenHeight;
         displayImages[i].format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
         displayImages[i].mipmaps = 1;
-        displayImages[i].data = (void*)blackDisplayImage.data;
+        displayImages[i].data = (void*)displayMat[i].data;
         
         readImages[i].width = screenWidth;
         readImages[i].height = screenHeight;
         readImages[i].format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
         readImages[i].mipmaps = 1;
-        readImages[i].data = (void*)blackReadImage.data;
+        readImages[i].data = (void*)readMat[i].data;
         
         textures[i] = LoadTextureFromImage(displayImages[i]);
     }
-        
     
-
     Image image = LoadImage("../assets/splash.png");
     Texture2D splashscreen = LoadTextureFromImage(image);
     UnloadImage(image);
@@ -117,8 +120,10 @@ int main(void)
     EndDrawing();
 
     capture.setCalibrate(calibrate);
-    capture.captureNewFrame(displayImages[0],  readImages[0]);
+    capture.captureNewFrame(displayImages[0],  readImages[0], displayMat[0],  readMat[0]);
     while(!capture.isFrameNew());
+//    displayImages[0].data = (void*)displayMat[0].data;
+//    readImages[0].data = (void*)readMat[0].data;
     textures[0] = LoadTextureFromImage(displayImages[0]);
 
 
@@ -136,8 +141,10 @@ int main(void)
         if((int)mode != controls.getMode()){
             mode = (playMode)controls.getMode();
             for(int i = 0; i < NUM_IMAGES; i++){
-                displayImages[i].data = (void*)blackDisplayImage.data;
-                readImages[i].data = (void*)blackReadImage.data;
+                displayMat[i] = cv::Mat(1280, 720, CV_8UC3, cv::Scalar(0, 0, 0));
+                readMat[i] = cv::Mat(1280, 720, CV_8UC3, cv::Scalar(0, 0, 0));
+                displayImages[i].data = (void*)displayMat[i].data;
+                readImages[i].data = (void*)readMat[i].data;
                 textures[i] = LoadTextureFromImage(displayImages[i]);
             }
         }
@@ -148,9 +155,9 @@ int main(void)
 		    capture.setCalibrate(calibrate);
 		    if(capture.isFrameNew()){
                 if(mode == playMode_static)
-                    capture.captureNewFrame(displayImages[0], readImages[0]);
+                    capture.captureNewFrame(displayImages[0],  readImages[0], displayMat[0], readMat[0]);
                 else
-                    capture.captureNewFrame(displayImages[nextImage], readImages[nextImage]);
+                    capture.captureNewFrame(displayImages[nextImage],  readImages[nextImage], displayMat[nextImage], readMat[nextImage]);
 			    loadNextImage = true;
 			    isCapturing = true;
 		    }
@@ -162,9 +169,9 @@ int main(void)
 	    if(capture.isFrameNew()){
 		    if(controls.isCapturePressed()){
                 if(mode == playMode_static){
-                    capture.captureNewFrame(displayImages[0], readImages[0]);
+                    capture.captureNewFrame(displayImages[0],  readImages[0], displayMat[0], readMat[0]);
                 }else
-                    capture.captureNewFrame(displayImages[standbyImage], readImages[standbyImage]);
+                    capture.captureNewFrame(displayImages[standbyImage],  readImages[standbyImage], displayMat[standbyImage], readMat[standbyImage]);
 			    loadNextImage = true;
 			    isCapturing = true;
 		    }
@@ -202,7 +209,6 @@ int main(void)
         if(capture.isFrameNew() && loadNextImage){
             if(mode == playMode_static){
                 UnloadTexture(textures[0]);
-                
                 textures[0] = LoadTextureFromImage(displayImages[0]);
             }else{
                 UnloadTexture(textures[standbyImage]);
