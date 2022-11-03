@@ -416,14 +416,8 @@ std::string getCurrentExePath(){
     return std::filesystem::path(path).parent_path().string() + "/../..";
 #elif defined(__linux__)
     char buff[FILENAME_MAX];
-    ssize_t size = readlink("/proc/self/exe", buff, sizeof(buff) - 1);
-    if (size == -1){
-        std::cout << "getCurrentExePath(): readlink failed with error " << errno << std::endl;
-    }
-    else{
-        buff[size] = '\0';
-        return buff;
-    }
+    std::filesystem::path p = std::filesystem::canonical("/proc/self/exe");
+    return p.parent_path().string() + "/..";
 #endif
 return "";
 }
