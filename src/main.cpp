@@ -33,11 +33,18 @@
 #include "scManager.h"
 #include <thread>
 #include <chrono>
+#include <filesystem>
+
+#ifdef __APPLE__
+    #include <mach-o/dyld.h>       /* _NSGetExecutablePath */
+    #include <limits.h>        /* PATH_MAX */
+#endif
 
 #define NUM_IMAGES 3
 
 //Storage code from: https://github.com/raysan5/raylib/blob/master/examples/core/core_storage_values.c
-#define STORAGE_DATA_FILE   "../assets/storage.data"   // Storage file
+#define STORAGE_DATA_FILE   "/assets/storage.data"   // Storage file
+#define SPLASH_SCREEN_FILE  "/assets/splash.png"
 
 // NOTE: Storage positions must start with 0, directly related to file memory layout
 typedef enum {
@@ -50,6 +57,7 @@ typedef enum {
 // Persistent storage functions
 static bool SaveStorageValue(unsigned int position, int value);
 static int LoadStorageValue(unsigned int position);
+static std::string getCurrentExePath();
 
 int main(void)
 {
@@ -129,7 +137,7 @@ int main(void)
         textures[i] = LoadTextureFromImage(displayImages[i]);
     }
     
-    Image image = LoadImage("../assets/splash.png");
+    Image image = LoadImage((getCurrentExePath() + SPLASH_SCREEN_FILE).c_str());
     Texture2D splashscreen = LoadTextureFromImage(image);
     UnloadImage(image);
 
@@ -311,7 +319,7 @@ bool SaveStorageValue(unsigned int position, int value)
     bool success = false;
     unsigned int dataSize = 0;
     unsigned int newDataSize = 0;
-    unsigned char *fileData = LoadFileData(STORAGE_DATA_FILE, &dataSize);
+    unsigned char *fileData = LoadFileData((getCurrentExePath() + STORAGE_DATA_FILE).c_str(), &dataSize);
     unsigned char *newFileData = NULL;
 
     if (fileData != NULL)
@@ -349,7 +357,7 @@ bool SaveStorageValue(unsigned int position, int value)
             dataPtr[position] = value;
         }
 
-        success = SaveFileData(STORAGE_DATA_FILE, newFileData, newDataSize);
+        success = SaveFileData((getCurrentExePath() + STORAGE_DATA_FILE).c_str(), newFileData, newDataSize);
         RL_FREE(newFileData);
 
         TraceLog(LOG_INFO, "FILEIO: [%s] Saved storage value: %i", STORAGE_DATA_FILE, value);
@@ -363,7 +371,7 @@ bool SaveStorageValue(unsigned int position, int value)
         int *dataPtr = (int *)fileData;
         dataPtr[position] = value;
 
-        success = SaveFileData(STORAGE_DATA_FILE, fileData, dataSize);
+        success = SaveFileData((getCurrentExePath() + STORAGE_DATA_FILE).c_str(), fileData, dataSize);
         UnloadFileData(fileData);
 
         TraceLog(LOG_INFO, "FILEIO: [%s] Saved storage value: %i", STORAGE_DATA_FILE, value);
@@ -378,7 +386,7 @@ int LoadStorageValue(unsigned int position)
 {
     int value = 0;
     unsigned int dataSize = 0;
-    unsigned char *fileData = LoadFileData(STORAGE_DATA_FILE, &dataSize);
+    unsigned char *fileData = LoadFileData((getCurrentExePath() + STORAGE_DATA_FILE).c_str(), &dataSize);
 
     if (fileData != NULL)
     {
@@ -395,4 +403,27 @@ int LoadStorageValue(unsigned int position)
     }
 
     return value;
+}
+
+//From OpenFrameworks / ofFileUtils.cpp
+std::string getCurrentExePath(){
+#if defined(__APPLE__)
+    char path[FILENAME_MAX];
+    uint32_t size = sizeof(path);
+    if(_NSGetExecutablePath(path, &size) != 0){
+        std::cout << "getCurrentExePath(): path buffer too small, need size " <<  size << std::endl;
+    }
+    return std::filesystem::path(path).parent_path().string() + "/../..";
+#elif defined(__linux__)
+    char buff[FILENAME_MAX];
+    ssize_t size = readlink("/proc/self/exe", buff, sizeof(buff) - 1);
+    if (size == -1){
+        std::cout << "getCurrentExePath(): readlink failed with error " << errno << std::endl;
+    }
+    else{
+        buff[size] = '\0';
+        return buff;
+    }
+#endif
+return "";
 }
