@@ -156,10 +156,10 @@ int main(void)
     capture.getAnchorPoints()[3].y = LoadStorageValue(7);
 
     capture.setCalibrate(calibrate);
-    capture.captureNewFrame(displayImages[0],  readImages[0], displayMat[0],  readMat[0]);
+    capture.captureNewFrame(displayMat[0],  readMat[0]);
     while(!capture.isFrameNew());
-//    displayImages[0].data = (void*)displayMat[0].data;
-//    readImages[0].data = (void*)readMat[0].data;
+    displayImages[0].data = (void*)displayMat[0].data;
+    readImages[0].data = (void*)readMat[0].data;
     textures[0] = LoadTextureFromImage(displayImages[0]);
 
 
@@ -197,7 +197,7 @@ int main(void)
                 else
                     loadingImage = nextImage;
                 
-                capture.captureNewFrame(displayImages[loadingImage],  readImages[loadingImage], displayMat[loadingImage], readMat[loadingImage]);
+                capture.captureNewFrame(displayMat[loadingImage], readMat[loadingImage]);
 			    loadNextImage = true;
 			    isCapturing = true;
 		    }
@@ -227,7 +227,7 @@ int main(void)
                         loadingImage = standbyImage;
                 }
                 
-                capture.captureNewFrame(displayImages[loadingImage],  readImages[loadingImage], displayMat[loadingImage], readMat[loadingImage]);
+                capture.captureNewFrame(displayMat[loadingImage], readMat[loadingImage]);
 			    loadNextImage = true;
 			    isCapturing = true;
 		    }
@@ -264,6 +264,8 @@ int main(void)
        }
         if(capture.isFrameNew() && loadNextImage){
             UnloadTexture(textures[loadingImage]);
+            displayImages[loadingImage].data = (void*)displayMat[loadingImage].data;
+            readImages[loadingImage].data = (void*)readMat[loadingImage].data;
             textures[loadingImage] = LoadTextureFromImage(displayImages[loadingImage]);
             
             loadNextImage = false;

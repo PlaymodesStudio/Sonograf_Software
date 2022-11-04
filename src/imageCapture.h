@@ -18,9 +18,9 @@ public:
     
     void setup();
     void update();
-    void captureNewFrame(Image &dispImage, Image &readImage, cv::Mat &dispMat, cv::Mat &readMat);
+    void captureNewFrame(cv::Mat &dispMat, cv::Mat &readMat);
 
-    void getAndProcessImage(Image &dispImage, Image &readImage, cv::Mat &dispMat, cv::Mat &readMat);
+    void getAndProcessImage(cv::Mat &dispMat, cv::Mat &readMat);
     
     bool isFrameNew();
     cv::Mat& getFrame();

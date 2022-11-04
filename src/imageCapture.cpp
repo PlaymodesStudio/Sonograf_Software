@@ -46,8 +46,8 @@ void imageCapture::setup(){
     capture.set(cv::CAP_PROP_FRAME_HEIGHT, camHeight);
 }
 
-void imageCapture::captureNewFrame(Image &dispImage, Image &readImage, cv::Mat &dispMat, cv::Mat &readMat){
-    future = std::async(std::launch::async, &imageCapture::getAndProcessImage, this, std::ref(dispImage), std::ref(readImage), std::ref(dispMat), std::ref(readMat));
+void imageCapture::captureNewFrame(cv::Mat &dispMat, cv::Mat &readMat){
+    future = std::async(std::launch::async, &imageCapture::getAndProcessImage, this, std::ref(dispMat), std::ref(readMat));
 }
 
 void imageCapture::update(){
@@ -63,7 +63,7 @@ cv::Mat& imageCapture::getFrame(){
     return transformedFrame;
 }
 
-void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage, cv::Mat &dispMat, cv::Mat &readMat){
+void imageCapture::getAndProcessImage(cv::Mat &dispMat, cv::Mat &readMat){
     for(int i = 0; i < 5; i++) capture.grab();
     bool captured = capture.retrieve(capturedFrame);
     if(!captured){
@@ -91,8 +91,6 @@ void imageCapture::getAndProcessImage(Image &dispImage, Image &readImage, cv::Ma
     cv::bitwise_not(transformedFrame, flippedImage);
     cv::cvtColor(flippedImage, readMat, cv::COLOR_GRAY2RGB);
     //TODO: Inverse image, make adaptative threshold, etc
-    dispImage.data = (void*)dispMat.data;
-    readImage.data = (void*)readMat.data;
 }
 
 void imageCapture::draw(float x, float y, float w, float h){
