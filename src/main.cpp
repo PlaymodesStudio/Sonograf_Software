@@ -193,7 +193,7 @@ int main(void)
 		    capture.setCalibrate(calibrate);
 		    if(capture.isFrameNew()){
                 if(mode == playMode_static)
-                    loadingImage = 0;
+                    loadingImage = nextImage;
                 else
                     loadingImage = nextImage;
                 
@@ -219,7 +219,7 @@ int main(void)
 	    if(capture.isFrameNew()){
 		    if(controls.isCapturePressed()){
                 if(mode == playMode_static)
-                    loadingImage = 0;
+                    loadingImage = nextImage;
                 else{
                     if(paused)
                         loadingImage = nextImage;
@@ -239,19 +239,17 @@ int main(void)
            
            if(currentPosition >= screenWidth){
                currentPosition -= screenWidth;
-               imageJump = false;
-           //}
-           //if(!imageJump && currentPosition >= dynamicLinePos){
+               if(mode == playMode_dynamic){
                currentImage = nextImage;
                nextImage = standbyImage;
                standbyImage = (standbyImage+1) % NUM_IMAGES;
-               imageJump = true;
+               }
            }
            
            currentScaleSize = supercollider.getScaleSize(controls.getScale());
            
            if(mode == playMode_static)
-               liveReader.update(readImages[0], currentScaleSize, (int)currentPosition);
+               liveReader.update(readImages[currentImage], currentScaleSize, (int)currentPosition);
            else{
                int shiftedPosition = currentPosition + dynamicLinePos;
                if(shiftedPosition >= screenWidth)
@@ -267,6 +265,12 @@ int main(void)
             displayImages[loadingImage].data = (void*)displayMat[loadingImage].data;
             readImages[loadingImage].data = (void*)readMat[loadingImage].data;
             textures[loadingImage] = LoadTextureFromImage(displayImages[loadingImage]);
+            
+            if(mode == playMode_static){
+                currentImage = nextImage;
+                nextImage = standbyImage;
+                standbyImage = (standbyImage+1) % NUM_IMAGES;
+            }
             
             loadNextImage = false;
             isCapturing = false;
@@ -285,7 +289,7 @@ int main(void)
         
         ClearBackground(WHITE);
         if(mode == playMode_static){
-            DrawTextureEx(textures[0], (Vector2){0, 0}, 0.0f, 1.0f, WHITE);
+            DrawTextureEx(textures[currentImage], (Vector2){0, 0}, 0.0f, 1.0f, WHITE);
         }else{
             DrawTextureEx(textures[currentImage], (Vector2){/*dynamicLinePos*/-currentPosition, 0}, 0.0f, 1.0f, WHITE);
             DrawTextureEx(textures[nextImage], (Vector2){/*dynamicLinePos + */screenWidth - currentPosition, 0}, 0.0f, 1.0f, WHITE);
