@@ -165,10 +165,26 @@ int main(void)
 
 //Wait splashScreen
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    
+    bool isMiddleMouseDown = false;
+    int middleMouseHoldFrames = 0;
 
     // Main loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
+    	isMiddleMouseDown = IsMouseButtonDown(2);
+	if(isMiddleMouseDown){
+	    middleMouseHoldFrames++;
+	    if(middleMouseHoldFrames >= 60*3){ //3 seconds
+		std::exit(170);
+	    }
+	}else{
+	    if(middleMouseHoldFrames > 0){
+		std::exit(171);
+	    }
+	}
+
+
         // Update
         //----------------------------------------------------------------------------------
 	    controls.readValues();
