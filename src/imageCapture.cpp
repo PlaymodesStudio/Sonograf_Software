@@ -85,8 +85,8 @@ void imageCapture::getAndProcessImage(cv::Mat &dispMat, cv::Mat &readMat){
         warpPerspective(flippedImage, dispMat, transform, transformedFrame.size(), cv::INTER_CUBIC);
     }
     cv::cvtColor(dispMat, capturedFrame, cv::COLOR_RGB2GRAY);
-    cv::threshold(capturedFrame, transformedFrame, 100, 255, cv::THRESH_BINARY);
-    //cv::adaptiveThreshold(capturedFrame, transformedFrame, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 100, 10);
+    //cv::threshold(capturedFrame, transformedFrame, 100, 255, cv::THRESH_BINARY+cv::THRESH_OTSU);
+    cv::adaptiveThreshold(capturedFrame, transformedFrame, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 491, 21);
     //cv::resize(transformedFrame, resizedMat, cv::Size(camWidth, reducedHeight), cv::INTER_MAX);
     cv::bitwise_not(transformedFrame, flippedImage);
     cv::cvtColor(flippedImage, readMat, cv::COLOR_GRAY2RGB);
