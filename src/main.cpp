@@ -294,8 +294,8 @@ int main(void)
         }
         
         if(IsKeyPressed(KEY_D)){
-            UnloadTexture(textures[0]);
-            textures[0] = LoadTextureFromImage(readImages[0]);
+            UnloadTexture(textures[currentImage]);
+            textures[currentImage] = LoadTextureFromImage(readImages[currentImage]);
         }
         
         // Draw
