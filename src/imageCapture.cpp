@@ -8,7 +8,7 @@
 #include "imageCapture.h"
 #include "raymath.h"
 
-imageCapture::imageCapture(int width, int height) : camWidth(width), camHeight(height) {
+imageCapture::imageCapture(int width, int height, std::string calibrationFile) : camWidth(width), camHeight(height) {
     anchorDragIdx = -1;
     anchorSelectIdx = -1;
     calibrate = false;
@@ -26,6 +26,16 @@ imageCapture::imageCapture(int width, int height) : camWidth(width), camHeight(h
     dstPoints[1] = cv::Point2f(camWidth, 0);
     dstPoints[2] = cv::Point2f(camWidth, camHeight);
     dstPoints[3] = cv::Point2f(0, camHeight);
+    
+    cv::FileStorage fs(calibrationFile, cv::FileStorage::READ);
+    cv::Size imageSize;
+    cv::Size2f sensorSize;
+    cv::Mat cameraMatrix;
+    fs["cameraMatrix"] >> cameraMatrix;
+    fs["distCoeffs"] >> distCoeffs;
+    
+    cv::Mat newCameraMatrix = getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, cv::Size(1280, 720), 0);
+    initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat(), newCameraMatrix, cv::Size(1280, 720), CV_16SC2, undistortMapX, undistortMapY);
 }
 
 void imageCapture::setup(){
@@ -65,10 +75,13 @@ cv::Mat& imageCapture::getFrame(){
 
 void imageCapture::getAndProcessImage(cv::Mat &dispMat, cv::Mat &readMat){
     for(int i = 0; i < 5; i++) capture.grab();
-    bool captured = capture.retrieve(capturedFrame);
+    bool captured = capture.retrieve(colorFrame);
+//    bool captured = capture.retrieve(capturedFrame);
     if(!captured){
         std::cout << "ERROR! Frame not captured" << std::endl;
     }
+    
+    cv::remap(colorFrame, capturedFrame, undistortMapX, undistortMapY, cv::INTER_LINEAR);
     
     if(calibrate){
         cv::cvtColor(capturedFrame, colorFrame, cv::COLOR_BGR2RGB);

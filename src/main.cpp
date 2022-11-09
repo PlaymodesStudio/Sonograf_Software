@@ -45,6 +45,7 @@
 //Storage code from: https://github.com/raysan5/raylib/blob/master/examples/core/core_storage_values.c
 #define STORAGE_DATA_FILE   "/assets/storage.data"   // Storage file
 #define SPLASH_SCREEN_FILE  "/assets/splash.png"
+#define CALIBRATION_FILE    "/assets/calibration.yml"
 
 // NOTE: Storage positions must start with 0, directly related to file memory layout
 typedef enum {
@@ -76,7 +77,7 @@ int main(void)
     SetMouseCursor(4);
     SetTraceLogLevel(100);
     //--------------------------------------------------------------------------------------
-    imageCapture capture(screenWidth, screenHeight);
+    imageCapture capture(screenWidth, screenHeight, getCurrentExePath() + CALIBRATION_FILE);
     capture.setup();
 
     imageRead liveReader;

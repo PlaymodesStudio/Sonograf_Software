@@ -11,10 +11,11 @@
 #include "raylib.h"
 #include "opencv2/opencv.hpp"
 #include <future>
+#include <string>
 
 class imageCapture{
 public:
-    imageCapture(int width, int height);
+    imageCapture(int width, int height, std::string calibrationFile);
     
     void setup();
     void update();
@@ -53,6 +54,9 @@ private:
     cv::Mat warpedFrame;
     cv::Mat transformedFrame;
     cv::Mat resizedMat;
+    cv::Mat cameraMatrix;
+    cv::Mat distCoeffs;
+    cv::Mat undistortMapX, undistortMapY;
 
     //Gui Vars
     int anchorDragIdx;
