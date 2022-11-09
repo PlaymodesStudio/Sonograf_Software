@@ -80,7 +80,9 @@ void physicalControls::readValues(){
 
 	if(captureButton && !captureButton_prevState) capture = true;
 
+#ifndef MODE_BUTTON_FIX
         mode = modeToggle;
+#endif
         freeze = freezeButton;
 
         if(scaleButton && !scaleButton_prevState){
@@ -101,11 +103,22 @@ void physicalControls::readValues(){
 
 	//TODO: FIRMWARE V2
 	if(modeToggle != modeToggle_prevState){
+#ifdef MODE_BUTTON_FIX
+		if(modeToggle){
+			mode = !mode;
+			modeMessageTimer = 60;
+			if(mode)
+				modeMessage = "MODE: DINAMIC";
+			else
+				modeMessage = "MODE: ESTATIC";
+		}
+#else
 		modeMessageTimer = 60;
 		if(modeToggle)		
-			modeMessage = "MODE: ESTATIC";
-		else
 			modeMessage = "MODE: DINAMIC";
+		else
+			modeMessage = "MODE: ESTATIC";
+#endif
 	}
 
 

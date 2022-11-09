@@ -5,6 +5,7 @@ project(Sonograf)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set (CMAKE_CXX_STANDARD 17)
 add_definitions(-D COMPILE_WITHOUT_OPENFRAMEWORKS)
+#add_definitions(-D MODE_BUTTON_FIX)
 
 # Dependencies
 find_package(raylib 4.2.0 QUIET) # QUIET or REQUIRED
