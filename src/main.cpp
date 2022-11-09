@@ -147,14 +147,21 @@ int main(void)
     EndDrawing();
     
     
-    capture.getAnchorPoints()[0].x = LoadStorageValue(0);
-    capture.getAnchorPoints()[0].y = LoadStorageValue(1);
-    capture.getAnchorPoints()[1].x = LoadStorageValue(2);
-    capture.getAnchorPoints()[1].y = LoadStorageValue(3);
-    capture.getAnchorPoints()[2].x = LoadStorageValue(4);
-    capture.getAnchorPoints()[2].y = LoadStorageValue(5);
-    capture.getAnchorPoints()[3].x = LoadStorageValue(6);
-    capture.getAnchorPoints()[3].y = LoadStorageValue(7);
+    unsigned int dataSize = 0;
+    unsigned char *fileData = LoadFileData((getCurrentExePath() + STORAGE_DATA_FILE).c_str(), &dataSize);
+
+    if (fileData != NULL){
+        capture.getAnchorPoints()[0].x = LoadStorageValue(0);
+        capture.getAnchorPoints()[0].y = LoadStorageValue(1);
+        capture.getAnchorPoints()[1].x = LoadStorageValue(2);
+        capture.getAnchorPoints()[1].y = LoadStorageValue(3);
+        capture.getAnchorPoints()[2].x = LoadStorageValue(4);
+        capture.getAnchorPoints()[2].y = LoadStorageValue(5);
+        capture.getAnchorPoints()[3].x = LoadStorageValue(6);
+        capture.getAnchorPoints()[3].y = LoadStorageValue(7);
+    }
+    
+    
 
     capture.setCalibrate(calibrate);
     capture.captureNewFrame(displayMat[0],  readMat[0]);
