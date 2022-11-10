@@ -317,9 +317,9 @@ int main(void)
         }else{
             DrawTextureEx(textures[currentImage], (Vector2){/*dynamicLinePos*/-currentPosition, 0}, 0.0f, 1.0f, WHITE);
             DrawTextureEx(textures[nextImage], (Vector2){/*dynamicLinePos + */screenWidth - currentPosition, 0}, 0.0f, 1.0f, WHITE);
-            DrawTextureEx(textures[0], (Vector2){700, 600}, 0.0f, 0.2f, LIGHTGRAY);
-            DrawTextureEx(textures[1], (Vector2){900, 600}, 0.0f, 0.2f, LIGHTGRAY);
-            DrawTextureEx(textures[2], (Vector2){1100, 600}, 0.0f, 0.2f, LIGHTGRAY);
+            //DrawTextureEx(textures[0], (Vector2){700, 600}, 0.0f, 0.2f, LIGHTGRAY);
+            //DrawTextureEx(textures[1], (Vector2){900, 600}, 0.0f, 0.2f, LIGHTGRAY);
+            //DrawTextureEx(textures[2], (Vector2){1100, 600}, 0.0f, 0.2f, LIGHTGRAY);
         }
         if(!calibrate){
             liveReader.draw(currentScaleSize, (int)mode);
